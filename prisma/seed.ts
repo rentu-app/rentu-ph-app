@@ -182,6 +182,28 @@ async function main() {
     skipDuplicates: true,
   });
 
+  const isaiasAdmin = await prisma.usuario.upsert({
+    where: { email: "isaiasmacia@gmail.com" },
+    update: {
+      nombre: "Isaias Macia",
+      rol: RolUsuario.ADMINISTRADOR,
+    },
+    create: {
+      nombre: "Isaias Macia",
+      email: "isaiasmacia@gmail.com",
+      passwordHash: PASSWORD_DEMO,
+      rol: RolUsuario.ADMINISTRADOR,
+    },
+  });
+
+  await prisma.administradorCopropiedad.createMany({
+    data: [cedritos, santaBarbara, suba].map((c) => ({
+      usuarioId: isaiasAdmin.id,
+      copropiedadId: c.id,
+    })),
+    skipDuplicates: true,
+  });
+
   // ---------------------------------------------------------------------
   // 3. Inmuebles (10): 4 en Cedritos, 3 en Santa Bárbara, 3 en Suba
   // ---------------------------------------------------------------------
