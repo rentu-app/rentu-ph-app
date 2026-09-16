@@ -229,6 +229,7 @@ export async function actualizarEstadoReserva(
     await prisma.reserva.update({ where: { id: reservaId }, data: { estado } });
 
     revalidatePath("/dashboard/reservas");
+    revalidatePath("/portal/reservas");
 
     return { status: "success", message: "Reserva actualizada." };
   } catch (error) {

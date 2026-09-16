@@ -220,6 +220,7 @@ export async function responderPqrs(
     });
 
     revalidatePath("/dashboard/pqrs");
+    revalidatePath("/portal/pqrs");
 
     return { status: "success", message: "PQRS actualizada." };
   } catch (error) {

@@ -70,7 +70,7 @@ export async function generarCuentasDeCobroMensual(
             identificador: true,
             coeficiente: true,
             cuentasDeCobro: {
-              where: { deletedAt: null, periodo, estado: { not: EstadoCuenta.PAGADA } },
+              where: { deletedAt: null, periodo },
               select: { id: true },
             },
           },
