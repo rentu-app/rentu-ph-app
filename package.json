@@ -8,6 +8,7 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
+    "provision:admin": "tsx scripts/provisionar-admin.ts",
     "provision:auth": "tsx scripts/provisionar-usuario-auth.ts",
     "db:vector-index": "tsx scripts/crear-indices-vectoriales.ts"
   },
