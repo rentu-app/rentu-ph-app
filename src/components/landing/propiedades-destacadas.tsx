@@ -1,3 +1,5 @@
+// TODO: marketplace fuera del MVP, retomar después — ya no se renderiza en
+// src/app/page.tsx, se conserva el componente para cuando se retome.
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { getPropiedadesDisponibles } from "@/lib/data/propiedades";

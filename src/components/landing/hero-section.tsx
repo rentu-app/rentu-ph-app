@@ -15,15 +15,14 @@ export function HeroSection() {
 
           <h1 className="mt-6 text-4xl font-extrabold leading-[1.1] tracking-tight text-zinc-900 sm:text-5xl lg:text-6xl">
             La plataforma inteligente de{" "}
-            <span className="text-brand-700">gestión y arrendamiento</span> para
+            <span className="text-brand-700">gestión operativa</span> para
             Propiedad Horizontal.
           </h1>
 
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-600">
             Cartera al día, PQRS con trazabilidad, reservas que se bloquean
-            solas cuando un inmueble no está a paz y salvo, un Copiloto con IA
-            que responde el reglamento por ti, y un marketplace para arrendar
-            los inmuebles disponibles.
+            solas cuando un inmueble no está a paz y salvo, y un Copiloto con
+            IA que responde el reglamento por ti.
           </p>
 
           <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -33,12 +32,6 @@ export function HeroSection() {
             >
               Probar Demo Admin
               <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/propiedades"
-              className="inline-flex items-center justify-center rounded-md border border-zinc-300 bg-white px-6 py-3.5 text-base font-semibold text-zinc-800 transition-colors hover:bg-zinc-50"
-            >
-              Explorar Propiedades
             </Link>
           </div>
         </div>

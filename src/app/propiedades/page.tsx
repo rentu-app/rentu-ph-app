@@ -1,3 +1,5 @@
+// TODO: marketplace fuera del MVP, retomar después — ruta sin enlace visible
+// desde la landing ni el nav (ver src/components/landing/nav-links.ts).
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/landing/site-header";
 import { SiteFooter } from "@/components/landing/site-footer";
