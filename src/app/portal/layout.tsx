@@ -8,17 +8,17 @@ export default async function PortalLayout({ children }: { children: ReactNode }
 
   return (
     <div className="min-h-full bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-          <div>
+      <header className="border-b border-zinc-200 bg-white pt-[env(safe-area-inset-top)]">
+        <div className="relative mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+          <div className="min-w-0">
             <p className="text-lg font-semibold text-zinc-900">Rentu</p>
-            <p className="text-xs text-zinc-500">
+            <p className="truncate text-xs text-zinc-500">
               {inmuebleActivo
                 ? `${inmuebleActivo.inmueble.identificador} — ${inmuebleActivo.inmueble.copropiedad.nombre}`
                 : "Portal del residente"}
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {vinculos.length > 1 ? (
               <SeleccionarInmuebleForm
                 vinculos={vinculos}
@@ -29,7 +29,9 @@ export default async function PortalLayout({ children }: { children: ReactNode }
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-8 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:px-6">
+        {children}
+      </main>
     </div>
   );
 }

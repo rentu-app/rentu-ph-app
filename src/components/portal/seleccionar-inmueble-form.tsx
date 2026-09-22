@@ -16,7 +16,7 @@ export function SeleccionarInmuebleForm({
         name="inmuebleId"
         defaultValue={inmuebleActivoId}
         onChange={(evento) => evento.currentTarget.form?.requestSubmit()}
-        className="rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-zinc-500 focus:outline-none"
+        className="min-h-11 max-w-[55vw] rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-zinc-500 focus:outline-none sm:max-w-none"
       >
         {vinculos.map((vinculo) => (
           <option key={vinculo.inmueble.id} value={vinculo.inmueble.id}>

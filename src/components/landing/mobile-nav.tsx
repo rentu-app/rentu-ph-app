@@ -15,28 +15,35 @@ export function MobileNav() {
         onClick={() => setAbierto((v) => !v)}
         aria-expanded={abierto}
         aria-label="Abrir menú"
-        className="flex h-9 w-9 items-center justify-center rounded-md text-zinc-700 hover:bg-zinc-100"
+        className="flex h-11 w-11 items-center justify-center rounded-md text-zinc-700 hover:bg-zinc-100"
       >
         {abierto ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
       {abierto ? (
-        <div className="absolute inset-x-0 top-full border-b border-zinc-200 bg-white px-6 py-4 shadow-lg">
-          <nav className="flex flex-col gap-3 text-sm font-medium text-zinc-700">
+        <div className="absolute inset-x-0 top-full border-b border-zinc-200 bg-white px-6 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-2 shadow-lg">
+          <nav className="flex flex-col gap-1 text-sm font-medium text-zinc-700">
             {ENLACES_NAV.map((enlace) => (
               <Link
                 key={enlace.href}
                 href={enlace.href}
                 onClick={() => setAbierto(false)}
-                className="py-1"
+                className="flex min-h-11 items-center"
               >
                 {enlace.etiqueta}
               </Link>
             ))}
             <Link
+              href="/registro"
+              onClick={() => setAbierto(false)}
+              className="mt-2 flex min-h-11 items-center justify-center rounded-md border border-zinc-300 px-4 text-center font-semibold text-zinc-700"
+            >
+              Registrarse
+            </Link>
+            <Link
               href="/login"
               onClick={() => setAbierto(false)}
-              className="mt-2 rounded-md bg-brand-600 px-4 py-2 text-center font-semibold text-white"
+              className="flex min-h-11 items-center justify-center rounded-md bg-brand-600 px-4 text-center font-semibold text-white"
             >
               Ingresar al Portal
             </Link>

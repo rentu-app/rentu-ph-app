@@ -20,7 +20,7 @@ function BotonRadicar() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+      className="min-h-11 w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
     >
       {pending ? "Radicando…" : "Radicar PQRS"}
     </button>
@@ -100,7 +100,7 @@ export function CrearPqrsForm() {
         ) : null}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <BotonRadicar />
         {estado.status === "error" ? (
           <p className="text-sm text-red-600">{estado.message}</p>

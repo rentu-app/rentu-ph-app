@@ -42,7 +42,7 @@ export function FormPanel({
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className={`inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold shadow-sm transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98] ${estilosBoton}`}
+        className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold shadow-sm transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98] sm:w-auto ${estilosBoton}`}
       >
         {icon}
         {triggerLabel}

@@ -105,7 +105,7 @@ function FiltroPill({
   return (
     <Link
       href={href}
-      className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
+      className={`flex min-h-11 items-center rounded-full px-3 text-sm font-medium transition-all sm:min-h-0 sm:py-1.5 ${
         activo
           ? "bg-zinc-900 text-white shadow-sm dark:bg-zinc-50 dark:text-zinc-900"
           : "bg-zinc-100 text-zinc-600 hover:scale-[1.03] hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"

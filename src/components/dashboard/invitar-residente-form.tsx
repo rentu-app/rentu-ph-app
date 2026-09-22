@@ -18,7 +18,7 @@ function BotonInvitar() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-600/20 transition-all hover:scale-[1.02] hover:bg-brand-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:bg-brand-500 dark:hover:bg-brand-400"
+      className="min-h-11 w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-600/20 sm:w-auto transition-all hover:scale-[1.02] hover:bg-brand-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:bg-brand-500 dark:hover:bg-brand-400"
     >
       {pending ? "Invitando…" : "Invitar residente"}
     </button>
@@ -160,7 +160,7 @@ export function InvitarResidenteForm({
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <BotonInvitar />
         {estado.status === "error" ? (
           <p className="text-sm text-red-600">{estado.message}</p>

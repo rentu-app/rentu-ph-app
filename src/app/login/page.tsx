@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
 
 export const metadata: Metadata = {
@@ -19,6 +20,12 @@ export default async function LoginPage(props: PageProps<"/login">) {
           </p>
         </div>
         <LoginForm next={next} />
+        <p className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+          ¿No tienes cuenta?{" "}
+          <Link href="/registro" className="font-medium text-brand-700 hover:text-brand-800 dark:text-brand-400">
+            Regístrate
+          </Link>
+        </p>
       </div>
     </div>
   );

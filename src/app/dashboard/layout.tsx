@@ -15,8 +15,8 @@ export default function DashboardLayout({
         className="pointer-events-none absolute -top-24 right-0 -z-10 h-72 w-72 rounded-full bg-accent-200/30 blur-3xl dark:bg-accent-500/10"
       />
 
-      <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/85 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/85">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3.5">
+      <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/85 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/85">
+        <div className="relative mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white">
               <Building2 className="h-5 w-5" />
@@ -34,7 +34,9 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-8 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:px-6">
+        {children}
+      </main>
     </div>
   );
 }

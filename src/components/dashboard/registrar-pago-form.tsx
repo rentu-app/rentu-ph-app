@@ -15,7 +15,7 @@ function BotonAbonar() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md bg-brand-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-400"
+      className="min-h-11 shrink-0 rounded-md bg-brand-600 px-3 text-xs font-medium text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-1.5 dark:bg-brand-500 dark:hover:bg-brand-400"
     >
       {pending ? "Registrando…" : "Abonar"}
     </button>
@@ -28,7 +28,7 @@ function BotonPagarTodo() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+      className="min-h-11 shrink-0 rounded-md border border-zinc-300 px-3 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-1.5 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
     >
       {pending ? "…" : "Pagar todo"}
     </button>
@@ -56,7 +56,7 @@ export function RegistrarPagoForm({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <form action={accionAbono} className="flex items-center gap-1.5">
           <input type="hidden" name="cuentaDeCobroId" value={cuentaDeCobroId} />
           <input type="hidden" name="metodo" value={METODOS_PAGO[0]} />
@@ -69,7 +69,7 @@ export function RegistrarPagoForm({
             type="text"
             inputMode="decimal"
             placeholder={saldoPendiente}
-            className="w-28 rounded-md border border-zinc-300 px-2 py-1.5 text-xs tabular-nums focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+            className="min-h-11 w-24 rounded-md border border-zinc-300 px-2 text-xs tabular-nums focus:border-zinc-500 focus:outline-none sm:min-h-0 sm:w-28 sm:py-1.5 dark:border-zinc-700 dark:bg-zinc-950"
           />
           <BotonAbonar />
         </form>

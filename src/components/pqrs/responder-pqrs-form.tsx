@@ -13,7 +13,7 @@ function BotonGuardar() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md bg-brand-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-400"
+      className="min-h-11 rounded-md bg-brand-600 px-3 text-xs font-medium text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-1.5 dark:bg-brand-500 dark:hover:bg-brand-400"
     >
       {pending ? "Guardando…" : "Guardar"}
     </button>
@@ -39,7 +39,7 @@ export function ResponderPqrsForm({
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="text-xs font-medium text-zinc-600 underline underline-offset-2 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+        className="flex min-h-11 items-center text-xs font-medium text-zinc-600 underline underline-offset-2 hover:text-zinc-900 sm:min-h-0 dark:text-zinc-400 dark:hover:text-zinc-100"
       >
         Responder / cambiar estado
       </button>
@@ -88,7 +88,7 @@ export function ResponderPqrsForm({
         <button
           type="button"
           onClick={() => setAbierto(false)}
-          className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          className="flex min-h-11 items-center text-xs text-zinc-500 hover:text-zinc-700 sm:min-h-0 dark:hover:text-zinc-300"
         >
           Cancelar
         </button>

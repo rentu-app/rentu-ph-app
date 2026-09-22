@@ -22,7 +22,7 @@ function BotonEstado({
       name="estado"
       value={estado}
       disabled={pending}
-      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${claseActiva}`}
+      className={`min-h-11 rounded-md px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-1.5 ${claseActiva}`}
     >
       {etiqueta}
     </button>

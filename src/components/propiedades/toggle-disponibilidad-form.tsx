@@ -11,7 +11,7 @@ function BotonToggle({ publicando }: { publicando: boolean }) {
     <button
       type="submit"
       disabled={pending}
-      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`min-h-11 rounded-md px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-1.5 ${
         publicando
           ? "bg-brand-600 text-white hover:bg-brand-700"
           : "border border-zinc-300 text-zinc-700 hover:bg-zinc-50"
