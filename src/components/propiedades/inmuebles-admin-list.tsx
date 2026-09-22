@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { InmuebleParaMarketplace } from "@/lib/data/propiedades";
 import { ToggleDisponibilidadForm } from "@/components/propiedades/toggle-disponibilidad-form";
 import { formatearMoneda } from "@/lib/formatters";
+import { FadeIn } from "@/components/ui/motion";
 
 export function InmueblesAdminList({
   inmuebles,
@@ -13,7 +14,7 @@ export function InmueblesAdminList({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+    <FadeIn className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
       <table className="min-w-full divide-y divide-zinc-200">
         <thead className="bg-zinc-50">
           <tr>
@@ -71,7 +72,7 @@ export function InmueblesAdminList({
           ))}
         </tbody>
       </table>
-    </div>
+    </FadeIn>
   );
 }
 

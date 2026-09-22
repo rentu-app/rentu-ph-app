@@ -14,11 +14,25 @@ const ETIQUETAS: Record<EstadoCuenta, string> = {
   EN_MORA: "En mora",
 };
 
+const PUNTOS: Record<EstadoCuenta, string> = {
+  PENDIENTE: "bg-amber-500",
+  PAGADA: "bg-emerald-500",
+  VENCIDA: "bg-orange-500",
+  EN_MORA: "bg-red-500",
+};
+
+const CON_PULSO: EstadoCuenta[] = ["VENCIDA", "EN_MORA"];
+
 export function EstadoCuentaBadge({ estado }: { estado: EstadoCuenta }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${ESTILOS[estado]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${ESTILOS[estado]}`}
     >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${PUNTOS[estado]} ${
+          CON_PULSO.includes(estado) ? "animate-pulse" : ""
+        }`}
+      />
       {ETIQUETAS[estado]}
     </span>
   );

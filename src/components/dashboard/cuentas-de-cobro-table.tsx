@@ -7,6 +7,7 @@ import {
 import { EstadoCuentaBadge } from "@/components/dashboard/estado-badge";
 import { RegistrarPagoForm } from "@/components/dashboard/registrar-pago-form";
 import { formatearFecha, formatearMoneda, formatearPeriodo } from "@/lib/formatters";
+import { FadeIn } from "@/components/ui/motion";
 
 export function CuentasDeCobroTable({
   cuentas,
@@ -22,7 +23,7 @@ export function CuentasDeCobroTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+    <FadeIn className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
       <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
         <thead className="bg-zinc-50 dark:bg-zinc-900/60">
           <tr>
@@ -83,7 +84,7 @@ export function CuentasDeCobroTable({
           })}
         </tbody>
       </table>
-    </div>
+    </FadeIn>
   );
 }
 

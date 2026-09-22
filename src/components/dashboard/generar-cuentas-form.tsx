@@ -11,7 +11,7 @@ function BotonGenerar() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-400"
+      className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-600/20 transition-all hover:scale-[1.02] hover:bg-brand-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:bg-brand-500 dark:hover:bg-brand-400"
     >
       {pending ? "Generando…" : "Generar cuentas"}
     </button>
@@ -47,20 +47,7 @@ export function GenerarCuentasForm({
   if (copropiedades.length === 0) return null;
 
   return (
-    <form
-      action={accion}
-      className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-    >
-      <div>
-        <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
-          Generar cuentas de cobro del periodo
-        </h3>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Crea una cuenta por cada inmueble activo, repartiendo el total de
-          administración según el coeficiente y arrastrando saldos pendientes.
-        </p>
-      </div>
-
+    <form action={accion} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Campo label="Copropiedad" htmlFor={idCopropiedad} className="lg:col-span-2">
           <select

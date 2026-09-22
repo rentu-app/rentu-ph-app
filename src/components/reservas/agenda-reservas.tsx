@@ -2,6 +2,7 @@ import type { ReservaConDetalle } from "@/lib/data/reservas";
 import { EstadoReservaBadge } from "@/components/reservas/estado-reserva-badge";
 import { GestionarReservaForm } from "@/components/reservas/gestionar-reserva-form";
 import { formatearFechaLarga, formatearHora } from "@/lib/formatters";
+import { StaggerList, StaggerListItem } from "@/components/ui/motion";
 
 function agruparPorDia(reservas: ReservaConDetalle[]) {
   const grupos = new Map<string, ReservaConDetalle[]>();
@@ -32,11 +33,11 @@ export function AgendaReservas({ reservas }: { reservas: ReservaConDetalle[] }) 
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
             {formatearFechaLarga(reservasDelDia[0].fechaInicio)}
           </h3>
-          <ul className="flex flex-col gap-3">
+          <StaggerList className="flex flex-col gap-3">
             {reservasDelDia.map((reserva) => (
-              <li
+              <StaggerListItem
                 key={reserva.id}
-                className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-zinc-800 dark:bg-zinc-900"
+                className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:justify-between dark:border-zinc-800 dark:bg-zinc-900"
               >
                 <div>
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
@@ -58,9 +59,9 @@ export function AgendaReservas({ reservas }: { reservas: ReservaConDetalle[] }) 
                   <EstadoReservaBadge estado={reserva.estado} />
                   <GestionarReservaForm reservaId={reserva.id} estadoActual={reserva.estado} />
                 </div>
-              </li>
+              </StaggerListItem>
             ))}
-          </ul>
+          </StaggerList>
         </div>
       ))}
     </div>

@@ -1,5 +1,6 @@
 import type { ResidenteConDetalle } from "@/lib/data/residentes";
 import { formatearFecha } from "@/lib/formatters";
+import { StaggerList, StaggerListItem } from "@/components/ui/motion";
 
 const ETIQUETAS_ROL: Record<string, string> = {
   PROPIETARIO: "Propietario",
@@ -16,11 +17,11 @@ export function ResidentesList({ residentes }: { residentes: ResidenteConDetalle
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    <StaggerList className="flex flex-col gap-3">
       {residentes.map((residente) => (
-        <li
+        <StaggerListItem
           key={residente.id}
-          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
         >
           <div>
             <p className="font-medium text-zinc-900 dark:text-zinc-50">
@@ -34,8 +35,8 @@ export function ResidentesList({ residentes }: { residentes: ResidenteConDetalle
           <span className="text-xs text-zinc-400">
             Vinculado desde {formatearFecha(residente.fechaInicio)}
           </span>
-        </li>
+        </StaggerListItem>
       ))}
-    </ul>
+    </StaggerList>
   );
 }

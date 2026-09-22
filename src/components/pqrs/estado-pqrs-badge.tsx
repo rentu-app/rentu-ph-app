@@ -12,11 +12,18 @@ export const ETIQUETAS_ESTADO_PQRS: Record<EstadoPQRS, string> = {
   CERRADO: "Cerrada",
 };
 
+const PUNTOS: Record<EstadoPQRS, string> = {
+  ABIERTO: "bg-amber-500 animate-pulse",
+  EN_PROCESO: "bg-blue-500",
+  CERRADO: "bg-emerald-500",
+};
+
 export function EstadoPqrsBadge({ estado }: { estado: EstadoPQRS }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${ESTILOS[estado]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${ESTILOS[estado]}`}
     >
+      <span className={`h-1.5 w-1.5 rounded-full ${PUNTOS[estado]}`} />
       {ETIQUETAS_ESTADO_PQRS[estado]}
     </span>
   );

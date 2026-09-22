@@ -2,6 +2,7 @@ import type { PqrsConDetalle } from "@/lib/data/pqrs";
 import { EstadoPqrsBadge } from "@/components/pqrs/estado-pqrs-badge";
 import { ResponderPqrsForm } from "@/components/pqrs/responder-pqrs-form";
 import { formatearFecha } from "@/lib/formatters";
+import { StaggerList, StaggerListItem } from "@/components/ui/motion";
 
 const ETIQUETAS_TIPO: Record<string, string> = {
   PETICION: "Petición",
@@ -21,11 +22,11 @@ export function PqrsList({ items }: { items: PqrsConDetalle[] }) {
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    <StaggerList className="flex flex-col gap-3">
       {items.map((pqrs) => (
-        <li
+        <StaggerListItem
           key={pqrs.id}
-          className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
         >
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -58,8 +59,8 @@ export function PqrsList({ items }: { items: PqrsConDetalle[] }) {
             estadoActual={pqrs.estado}
             respuestaActual={pqrs.respuestaAdmin}
           />
-        </li>
+        </StaggerListItem>
       ))}
-    </ul>
+    </StaggerList>
   );
 }

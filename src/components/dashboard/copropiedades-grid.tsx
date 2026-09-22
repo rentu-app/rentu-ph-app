@@ -1,4 +1,5 @@
 import type { CopropiedadResumen } from "@/lib/data/copropiedades";
+import { StaggerGrid, StaggerItem } from "@/components/ui/motion";
 
 export function CopropiedadesGrid({
   copropiedades,
@@ -14,11 +15,11 @@ export function CopropiedadesGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <StaggerGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {copropiedades.map((copropiedad) => (
-        <div
+        <StaggerItem
           key={copropiedad.id}
-          className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
         >
           <div>
             <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
@@ -51,8 +52,8 @@ export function CopropiedadesGrid({
               {copropiedad.cuentasPorCobrar} cuentas por cobrar
             </span>
           </div>
-        </div>
+        </StaggerItem>
       ))}
-    </div>
+    </StaggerGrid>
   );
 }

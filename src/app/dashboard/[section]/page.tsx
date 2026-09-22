@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EstadoPQRS, EstadoReserva } from "@prisma/client";
+import {
+  CalendarPlus,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  MessageSquarePlus,
+  UserPlus,
+} from "lucide-react";
 import { getAdministradorActual } from "@/lib/session";
 import { getCopropiedadesDelAdministrador } from "@/lib/data/copropiedades";
 import {
@@ -29,6 +38,8 @@ import { AgendaReservas } from "@/components/reservas/agenda-reservas";
 import { ETIQUETAS_ESTADO_RESERVA } from "@/components/reservas/estado-reserva-badge";
 import { InvitarResidenteForm } from "@/components/dashboard/invitar-residente-form";
 import { ResidentesList } from "@/components/dashboard/residentes-list";
+import { FormPanel } from "@/components/ui/form-panel";
+import { FadeIn } from "@/components/ui/motion";
 
 /**
  * Las 4 subpáginas del dashboard (pqrs, propiedades, reservas, residentes)
@@ -82,6 +93,29 @@ const FILTROS_RESERVA = [
   { valor: EstadoReserva.CANCELADA, etiqueta: ETIQUETAS_ESTADO_RESERVA.CANCELADA },
 ] as const;
 
+function FiltroPill({
+  href,
+  activo,
+  children,
+}: {
+  href: string;
+  activo: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
+        activo
+          ? "bg-zinc-900 text-white shadow-sm dark:bg-zinc-50 dark:text-zinc-900"
+          : "bg-zinc-100 text-zinc-600 hover:scale-[1.03] hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
+
 export default async function DashboardSeccionPage(
   props: PageProps<"/dashboard/[section]">
 ) {
@@ -120,43 +154,59 @@ async function SeccionPqrs({
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-          PQRS y convivencia
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Peticiones, quejas, reclamos y sugerencias de tus copropiedades.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
+            PQRS y convivencia
+          </h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Peticiones, quejas, reclamos y sugerencias de tus copropiedades.
+          </p>
+        </div>
+        {copropiedades.length > 0 ? (
+          <FormPanel
+            triggerLabel="Nueva PQRS"
+            title="Radicar PQRS"
+            description="Registra una petición, queja, reclamo o sugerencia dirigida a un residente."
+            icon={<MessageSquarePlus className="h-4 w-4" />}
+          >
+            <CrearPqrsForm copropiedades={copropiedades} />
+          </FormPanel>
+        ) : null}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <FadeIn className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           etiqueta={ETIQUETAS_ESTADO_PQRS.ABIERTO}
           valor={String(resumen.ABIERTO)}
           tono={resumen.ABIERTO > 0 ? "alerta" : "positivo"}
+          icono={Clock}
         />
-        <StatCard etiqueta={ETIQUETAS_ESTADO_PQRS.EN_PROCESO} valor={String(resumen.EN_PROCESO)} />
-        <StatCard etiqueta={ETIQUETAS_ESTADO_PQRS.CERRADO} valor={String(resumen.CERRADO)} tono="positivo" />
-      </div>
-
-      <CrearPqrsForm copropiedades={copropiedades} />
+        <StatCard
+          etiqueta={ETIQUETAS_ESTADO_PQRS.EN_PROCESO}
+          valor={String(resumen.EN_PROCESO)}
+          icono={Loader2}
+        />
+        <StatCard
+          etiqueta={ETIQUETAS_ESTADO_PQRS.CERRADO}
+          valor={String(resumen.CERRADO)}
+          tono="positivo"
+          icono={CheckCircle2}
+        />
+      </FadeIn>
 
       <section className="flex flex-col gap-4">
         <nav className="flex flex-wrap gap-2">
           {FILTROS_PQRS.map((filtro) => {
             const activo = filtro.valor === estadoFiltro;
             return (
-              <Link
+              <FiltroPill
                 key={filtro.etiqueta}
                 href={filtro.valor ? `/dashboard/pqrs?estado=${filtro.valor}` : "/dashboard/pqrs"}
-                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                  activo
-                    ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                }`}
+                activo={activo}
               >
                 {filtro.etiqueta}
-              </Link>
+              </FiltroPill>
             );
           })}
         </nav>
@@ -186,7 +236,7 @@ async function SeccionPropiedades({ administradorId }: { administradorId: string
             .
           </p>
         </div>
-        <span className="rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700">
+        <span className="rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 dark:bg-brand-950/40 dark:text-brand-300">
           {publicados} de {inmuebles.length} publicados
         </span>
       </div>
@@ -225,11 +275,23 @@ async function SeccionReservas({
       </div>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Zonas comunes</h2>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Zonas comunes</h2>
+          {copropiedades.length > 0 ? (
+            <FormPanel
+              triggerLabel="Nueva zona común"
+              title="Crear zona común"
+              description="ej. Salón social, Zona BBQ, Cancha múltiple."
+              icon={<CalendarPlus className="h-4 w-4" />}
+              variant="accent"
+            >
+              <CrearZonaComunForm
+                copropiedades={copropiedades.map(({ id, nombre }) => ({ id, nombre }))}
+              />
+            </FormPanel>
+          ) : null}
+        </div>
         <ZonasComunesList zonas={zonas} />
-        <CrearZonaComunForm
-          copropiedades={copropiedades.map(({ id, nombre }) => ({ id, nombre }))}
-        />
       </section>
 
       <section className="flex flex-col gap-4">
@@ -238,17 +300,13 @@ async function SeccionReservas({
           {FILTROS_RESERVA.map((filtro) => {
             const activo = filtro.valor === estadoFiltro;
             return (
-              <Link
+              <FiltroPill
                 key={filtro.etiqueta}
                 href={filtro.valor ? `/dashboard/reservas?estado=${filtro.valor}` : "/dashboard/reservas"}
-                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                  activo
-                    ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                }`}
+                activo={activo}
               >
                 {filtro.etiqueta}
-              </Link>
+              </FiltroPill>
             );
           })}
         </nav>
@@ -266,16 +324,26 @@ async function SeccionResidentes({ administradorId }: { administradorId: string 
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Residentes
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Invita a propietarios e inquilinos para que puedan entrar a su propio portal.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Residentes
+          </h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Invita a propietarios e inquilinos para que puedan entrar a su propio portal.
+          </p>
+        </div>
+        {copropiedades.length > 0 ? (
+          <FormPanel
+            triggerLabel="Invitar residente"
+            title="Invitar residente"
+            description="Le crea acceso a su propio portal y lo vincula a un inmueble. La contraseña temporal se muestra una sola vez."
+            icon={<UserPlus className="h-4 w-4" />}
+          >
+            <InvitarResidenteForm copropiedades={copropiedades} />
+          </FormPanel>
+        ) : null}
       </div>
-
-      <InvitarResidenteForm copropiedades={copropiedades} />
 
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">

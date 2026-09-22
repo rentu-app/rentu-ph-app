@@ -1,5 +1,6 @@
 import type { ZonaComunResumen } from "@/lib/data/reservas";
 import { formatearMoneda } from "@/lib/formatters";
+import { StaggerGrid, StaggerItem } from "@/components/ui/motion";
 
 export function ZonasComunesList({ zonas }: { zonas: ZonaComunResumen[] }) {
   if (zonas.length === 0) {
@@ -11,11 +12,11 @@ export function ZonasComunesList({ zonas }: { zonas: ZonaComunResumen[] }) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <StaggerGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {zonas.map((zona) => (
-        <div
+        <StaggerItem
           key={zona.id}
-          className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+          className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
         >
           <div>
             <div className="flex items-start justify-between gap-2">
@@ -39,8 +40,8 @@ export function ZonasComunesList({ zonas }: { zonas: ZonaComunResumen[] }) {
             </span>
             <span className="text-zinc-500 dark:text-zinc-400">{zona._count.reservas} reservas</span>
           </div>
-        </div>
+        </StaggerItem>
       ))}
-    </div>
+    </StaggerGrid>
   );
 }
