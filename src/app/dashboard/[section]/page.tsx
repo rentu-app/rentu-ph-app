@@ -1,55 +1,91 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
-import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { EstadoPQRS, EstadoReserva } from "@prisma/client";
 import {
   CalendarPlus,
-  CheckCircle2,
-  Clock,
-  Loader2,
+  FileStack,
+  HardHat,
   MessageSquarePlus,
   UserPlus,
 } from "lucide-react";
-import { getAdministradorActual } from "@/lib/session";
-import { getCopropiedadesDelAdministrador } from "@/lib/data/copropiedades";
 import {
-  getCopropiedadesConInmueblesParaPqrs,
-  getPqrsDeAdministrador,
+  EstadoOrdenServicio,
+  EstadoPQRS,
+  EstadoReserva,
+} from "@prisma/client";
+import { getContextoAdministrador } from "@/lib/session";
+import type { CopropiedadActiva } from "@/lib/data/copropiedad";
+import {
+  getDetalleUnidad,
+  getResumenCartera,
+  getUnidadesFiltradas,
+} from "@/lib/data/cartera";
+import {
+  getPqrsDeCopropiedad,
   getResumenPqrs,
+  getUnidadesConResidentes,
 } from "@/lib/data/pqrs";
-import { getInmueblesDelAdministradorParaMarketplace } from "@/lib/data/propiedades";
+import { getReservasDeCopropiedad, getZonasComunes } from "@/lib/data/reservas";
 import {
-  getReservasDeAdministrador,
-  getZonasComunesDeAdministrador,
-} from "@/lib/data/reservas";
-import {
-  getCopropiedadesConInmueblesParaInvitar,
-  getResidentesDeAdministrador,
+  getResidentesDeCopropiedad,
+  getResidentesHistoricos,
+  getUnidadesParaInvitar,
 } from "@/lib/data/residentes";
-import { StatCard } from "@/components/dashboard/stat-card";
+import {
+  getOrdenesServicio,
+  getPqrsEscalables,
+  getPrestadores,
+} from "@/lib/data/prestadores";
+import { getDocumentosPHDeCopropiedad } from "@/lib/data/documentos-ph";
+import { KpisCartera } from "@/components/cartera/resumen-cartera";
+import { UnidadesTabla } from "@/components/cartera/unidades-tabla";
+import { UnidadDetalle } from "@/components/cartera/unidad-detalle";
 import { CrearPqrsForm } from "@/components/pqrs/crear-pqrs-form";
 import { PqrsList } from "@/components/pqrs/pqrs-list";
 import { ETIQUETAS_ESTADO_PQRS } from "@/components/pqrs/estado-pqrs-badge";
-import { InmueblesAdminList } from "@/components/propiedades/inmuebles-admin-list";
+import { ETIQUETAS_ESTADO_RESERVA } from "@/components/reservas/estado-reserva-badge";
 import { CrearZonaComunForm } from "@/components/reservas/crear-zona-comun-form";
 import { ZonasComunesList } from "@/components/reservas/zonas-comunes-list";
 import { AgendaReservas } from "@/components/reservas/agenda-reservas";
-import { ETIQUETAS_ESTADO_RESERVA } from "@/components/reservas/estado-reserva-badge";
 import { InvitarResidenteForm } from "@/components/dashboard/invitar-residente-form";
-import { ResidentesList } from "@/components/dashboard/residentes-list";
+import {
+  ResidentesHistoricosList,
+  ResidentesList,
+} from "@/components/dashboard/residentes-list";
+import { CrearPrestadorForm } from "@/components/prestadores/crear-prestador-form";
+import { CrearOrdenForm } from "@/components/prestadores/crear-orden-form";
+import {
+  OrdenesServicioList,
+  PrestadoresList,
+} from "@/components/prestadores/prestadores-list";
+import { SubirDocumentoForm } from "@/components/dashboard/subir-documento-form";
+import { DocumentosPHList } from "@/components/dashboard/documentos-ph-list";
+import { CopilotoChat } from "@/components/dashboard/copiloto-chat";
 import { FormPanel } from "@/components/ui/form-panel";
-import { FadeIn } from "@/components/ui/motion";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  EncabezadoPagina,
+  EstadoVacio,
+  FilaFiltros,
+  FiltroPill,
+  Seccion,
+} from "@/components/ui/primitivos";
 
 /**
- * Las 4 subpáginas del dashboard (pqrs, propiedades, reservas, residentes)
- * viven en una sola ruta dinámica en vez de 4 carpetas separadas: cada
- * carpeta propia era su propia Serverless Function en Vercel, y el plan
- * Hobby limita a 12 por deployment — con `/dashboard` y `/api/copiloto` ya
- * cargando el binario de onnxruntime-node (lo que les impide agruparse con
- * el resto de páginas), esas 4 rutas sueltas hacían que el total se pasara.
+ * Las seis subpáginas del dashboard viven en una sola ruta dinámica en vez de
+ * seis carpetas: cada carpeta propia sería su propia Serverless Function en
+ * Vercel, y el plan Hobby limita a 12 por deployment. Acá además la sección
+ * `documentos` es la que carga el binario de onnxruntime-node (embeddings del
+ * Copiloto), así que `next.config.ts` acota el tracing a esta ruta.
  */
-const SECCIONES = ["pqrs", "propiedades", "reservas", "residentes"] as const;
+const SECCIONES = [
+  "cartera",
+  "reservas",
+  "pqrs",
+  "residentes",
+  "prestadores",
+  "documentos",
+] as const;
 type Seccion = (typeof SECCIONES)[number];
 
 function esSeccionValida(valor: string): valor is Seccion {
@@ -57,10 +93,12 @@ function esSeccionValida(valor: string): valor is Seccion {
 }
 
 const TITULOS: Record<Seccion, string> = {
-  pqrs: "PQRS · Rentu",
-  propiedades: "Propiedades · Rentu",
+  cartera: "Cartera · Rentu",
   reservas: "Reservas · Rentu",
+  pqrs: "PQRS · Rentu",
   residentes: "Residentes · Rentu",
+  prestadores: "Prestadores · Rentu",
+  documentos: "Documentos y Copiloto · Rentu",
 };
 
 export async function generateMetadata(
@@ -71,49 +109,11 @@ export async function generateMetadata(
   return { title: TITULOS[section] };
 }
 
-function esEstadoPqrsValido(valor: string | undefined): valor is EstadoPQRS {
-  return !!valor && (Object.values(EstadoPQRS) as string[]).includes(valor);
-}
+type SearchParams = Awaited<PageProps<"/dashboard/[section]">["searchParams"]>;
 
-function esEstadoReservaValido(valor: string | undefined): valor is EstadoReserva {
-  return !!valor && (Object.values(EstadoReserva) as string[]).includes(valor);
-}
-
-const FILTROS_PQRS = [
-  { valor: undefined, etiqueta: "Todas" },
-  { valor: EstadoPQRS.ABIERTO, etiqueta: ETIQUETAS_ESTADO_PQRS.ABIERTO },
-  { valor: EstadoPQRS.EN_PROCESO, etiqueta: ETIQUETAS_ESTADO_PQRS.EN_PROCESO },
-  { valor: EstadoPQRS.CERRADO, etiqueta: ETIQUETAS_ESTADO_PQRS.CERRADO },
-] as const;
-
-const FILTROS_RESERVA = [
-  { valor: undefined, etiqueta: "Todas" },
-  { valor: EstadoReserva.PENDIENTE, etiqueta: ETIQUETAS_ESTADO_RESERVA.PENDIENTE },
-  { valor: EstadoReserva.CONFIRMADA, etiqueta: ETIQUETAS_ESTADO_RESERVA.CONFIRMADA },
-  { valor: EstadoReserva.CANCELADA, etiqueta: ETIQUETAS_ESTADO_RESERVA.CANCELADA },
-] as const;
-
-function FiltroPill({
-  href,
-  activo,
-  children,
-}: {
-  href: string;
-  activo: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`flex min-h-11 items-center rounded-full px-3 text-sm font-medium transition-all sm:min-h-0 sm:py-1.5 ${
-        activo
-          ? "bg-zinc-900 text-white shadow-sm dark:bg-zinc-50 dark:text-zinc-900"
-          : "bg-zinc-100 text-zinc-600 hover:scale-[1.03] hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-      }`}
-    >
-      {children}
-    </Link>
-  );
+function leerParam(searchParams: SearchParams, clave: string): string | undefined {
+  const valor = searchParams[clave];
+  return typeof valor === "string" && valor.length > 0 ? valor : undefined;
 }
 
 export default async function DashboardSeccionPage(
@@ -122,235 +122,457 @@ export default async function DashboardSeccionPage(
   const { section } = await props.params;
   if (!esSeccionValida(section)) notFound();
 
-  const administrador = await getAdministradorActual();
+  const { copropiedad } = await getContextoAdministrador();
+  const searchParams = await props.searchParams;
+
+  if (!copropiedad) {
+    return (
+      <EstadoVacio
+        titulo="Todavía no tienes una copropiedad asignada"
+        descripcion="Pídele a quien administra Rentu que te asigne la copropiedad que vas a gestionar."
+      />
+    );
+  }
 
   switch (section) {
-    case "pqrs":
-      return <SeccionPqrs administradorId={administrador.id} searchParams={await props.searchParams} />;
-    case "propiedades":
-      return <SeccionPropiedades administradorId={administrador.id} />;
+    case "cartera":
+      return <SeccionCartera copropiedad={copropiedad} searchParams={searchParams} />;
     case "reservas":
-      return <SeccionReservas administradorId={administrador.id} searchParams={await props.searchParams} />;
+      return <SeccionReservas copropiedad={copropiedad} searchParams={searchParams} />;
+    case "pqrs":
+      return <SeccionPqrs copropiedad={copropiedad} searchParams={searchParams} />;
     case "residentes":
-      return <SeccionResidentes administradorId={administrador.id} />;
+      return <SeccionResidentes copropiedad={copropiedad} />;
+    case "prestadores":
+      return <SeccionPrestadores copropiedad={copropiedad} />;
+    case "documentos":
+      return <SeccionDocumentos copropiedad={copropiedad} />;
   }
 }
 
-async function SeccionPqrs({
-  administradorId,
+// ----------------------------------- CARTERA --------------------------------
+
+const SITUACIONES = [
+  { valor: undefined, etiqueta: "Todas" },
+  { valor: "con-saldo", etiqueta: "Con saldo" },
+  { valor: "en-mora", etiqueta: "En mora" },
+  { valor: "al-dia", etiqueta: "Al día" },
+] as const;
+
+/**
+ * La cartera y el detalle de una unidad comparten ruta: `?unidad=<id>` abre
+ * el detalle como página completa (en 375 px un panel lateral acaba tapando
+ * todo igual, y como página el enlace se puede compartir y el botón "atrás"
+ * del teléfono funciona). Los filtros viven en la URL, así que no hay estado
+ * en el cliente y cada vista es enlazable.
+ */
+async function SeccionCartera({
+  copropiedad,
   searchParams,
 }: {
-  administradorId: string;
-  searchParams: Awaited<PageProps<"/dashboard/[section]">["searchParams"]>;
+  copropiedad: CopropiedadActiva;
+  searchParams: SearchParams;
 }) {
-  const estadoParam = typeof searchParams.estado === "string" ? searchParams.estado : undefined;
-  const estadoFiltro = esEstadoPqrsValido(estadoParam) ? estadoParam : undefined;
+  const unidadId = leerParam(searchParams, "unidad");
+  const torre = leerParam(searchParams, "torre");
+  const situacionParam = leerParam(searchParams, "situacion");
+  const situacion = SITUACIONES.some((item) => item.valor === situacionParam)
+    ? situacionParam
+    : undefined;
 
-  const [resumen, pqrs, copropiedades] = await Promise.all([
-    getResumenPqrs(administradorId),
-    getPqrsDeAdministrador(administradorId, estadoFiltro),
-    getCopropiedadesConInmueblesParaPqrs(administradorId),
+  const parametrosLista = new URLSearchParams();
+  if (torre) parametrosLista.set("torre", torre);
+  if (situacion) parametrosLista.set("situacion", situacion);
+  const sufijoLista = parametrosLista.toString();
+  const hrefLista = `/dashboard/cartera${sufijoLista ? `?${sufijoLista}` : ""}`;
+
+  if (unidadId) {
+    const unidad = await getDetalleUnidad(copropiedad.id, unidadId);
+    if (!unidad) notFound();
+    return <UnidadDetalle unidad={unidad} hrefVolver={hrefLista} />;
+  }
+
+  function hrefCon(cambios: { torre?: string; situacion?: string }) {
+    const parametros = new URLSearchParams();
+    const torreFinal = "torre" in cambios ? cambios.torre : torre;
+    const situacionFinal = "situacion" in cambios ? cambios.situacion : situacion;
+    if (torreFinal) parametros.set("torre", torreFinal);
+    if (situacionFinal) parametros.set("situacion", situacionFinal);
+    const sufijo = parametros.toString();
+    return `/dashboard/cartera${sufijo ? `?${sufijo}` : ""}`;
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <EncabezadoPagina
+        titulo="Cartera"
+        descripcion="Saldo, mora y etapa de gestión de cada unidad. Abre una para ver su historial y registrar lo que hiciste."
+      />
+
+      <Suspense fallback={<Skeleton className="h-28" />}>
+        <KpisDeCartera copropiedadId={copropiedad.id} />
+      </Suspense>
+
+      <div className="flex flex-col gap-3">
+        <FilaFiltros etiquetaAccesible="Filtrar por torre">
+          <FiltroPill href={hrefCon({ torre: undefined })} activo={!torre}>
+            Todas las torres
+          </FiltroPill>
+          {copropiedad.torres.map((item) => (
+            <FiltroPill
+              key={item.nombre}
+              href={hrefCon({ torre: item.nombre })}
+              activo={torre === item.nombre}
+            >
+              {item.nombre} ({item.unidades})
+            </FiltroPill>
+          ))}
+        </FilaFiltros>
+
+        <FilaFiltros etiquetaAccesible="Filtrar por situación de cartera">
+          {SITUACIONES.map((item) => (
+            <FiltroPill
+              key={item.etiqueta}
+              href={hrefCon({ situacion: item.valor })}
+              activo={situacion === item.valor}
+            >
+              {item.etiqueta}
+            </FiltroPill>
+          ))}
+        </FilaFiltros>
+      </div>
+
+      <Suspense fallback={<Skeleton className="h-64" />}>
+        <ListaUnidades
+          copropiedadId={copropiedad.id}
+          torre={torre}
+          situacion={situacion}
+          sufijoLista={sufijoLista}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+async function KpisDeCartera({ copropiedadId }: { copropiedadId: string }) {
+  const resumen = await getResumenCartera(copropiedadId);
+  return <KpisCartera resumen={resumen} />;
+}
+
+async function ListaUnidades({
+  copropiedadId,
+  torre,
+  situacion,
+  sufijoLista,
+}: {
+  copropiedadId: string;
+  torre?: string;
+  situacion?: string;
+  sufijoLista: string;
+}) {
+  const unidades = await getUnidadesFiltradas(copropiedadId, { torre, situacion });
+
+  return (
+    <Seccion
+      titulo={`${unidades.length} unidad(es)`}
+      descripcion="Ordenadas por saldo pendiente."
+    >
+      <UnidadesTabla
+        unidades={unidades}
+        hrefDe={(id) =>
+          `/dashboard/cartera?unidad=${id}${sufijoLista ? `&${sufijoLista}` : ""}`
+        }
+      />
+    </Seccion>
+  );
+}
+
+// ---------------------------------- RESERVAS --------------------------------
+
+const FILTROS_RESERVA = [
+  { valor: undefined, etiqueta: "Todas" },
+  { valor: EstadoReserva.PENDIENTE, etiqueta: ETIQUETAS_ESTADO_RESERVA.PENDIENTE },
+  { valor: EstadoReserva.CONFIRMADA, etiqueta: ETIQUETAS_ESTADO_RESERVA.CONFIRMADA },
+  { valor: EstadoReserva.CANCELADA, etiqueta: ETIQUETAS_ESTADO_RESERVA.CANCELADA },
+] as const;
+
+async function SeccionReservas({
+  copropiedad,
+  searchParams,
+}: {
+  copropiedad: CopropiedadActiva;
+  searchParams: SearchParams;
+}) {
+  const estadoParam = leerParam(searchParams, "estado");
+  const estadoFiltro = (Object.values(EstadoReserva) as string[]).includes(
+    estadoParam ?? ""
+  )
+    ? (estadoParam as EstadoReserva)
+    : undefined;
+
+  const [zonas, reservas] = await Promise.all([
+    getZonasComunes(copropiedad.id),
+    getReservasDeCopropiedad(copropiedad.id, estadoFiltro),
   ]);
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-            PQRS y convivencia
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Peticiones, quejas, reclamos y sugerencias de tus copropiedades.
-          </p>
-        </div>
-        {copropiedades.length > 0 ? (
+      <EncabezadoPagina
+        titulo="Reservas de zonas comunes"
+        descripcion="Los residentes radican desde su portal. Una unidad con cuotas vencidas o en mora no puede radicar ni confirmar reservas hasta ponerse a paz y salvo."
+        accion={
           <FormPanel
-            triggerLabel="Nueva PQRS"
+            triggerLabel="Nueva zona común"
+            title="Crear zona común"
+            description="ej. Salón social, zona BBQ, cancha múltiple."
+            icon={<CalendarPlus className="h-4 w-4" />}
+            variant="accent"
+          >
+            <CrearZonaComunForm />
+          </FormPanel>
+        }
+      />
+
+      <Seccion titulo="Zonas comunes">
+        <ZonasComunesList zonas={zonas} />
+      </Seccion>
+
+      <Seccion
+        titulo="Agenda"
+        descripcion="Confirmar una reserva vuelve a validar la cartera y el cruce de horario en el servidor."
+      >
+        <FilaFiltros etiquetaAccesible="Filtrar reservas por estado">
+          {FILTROS_RESERVA.map((filtro) => (
+            <FiltroPill
+              key={filtro.etiqueta}
+              href={
+                filtro.valor
+                  ? `/dashboard/reservas?estado=${filtro.valor}`
+                  : "/dashboard/reservas"
+              }
+              activo={filtro.valor === estadoFiltro}
+            >
+              {filtro.etiqueta}
+            </FiltroPill>
+          ))}
+        </FilaFiltros>
+        <AgendaReservas reservas={reservas} />
+      </Seccion>
+    </div>
+  );
+}
+
+// ------------------------------------ PQRS ----------------------------------
+
+const FILTROS_PQRS = [
+  { valor: undefined, etiqueta: "Todas" },
+  { valor: EstadoPQRS.ABIERTO, etiqueta: ETIQUETAS_ESTADO_PQRS.ABIERTO },
+  { valor: EstadoPQRS.EN_PROCESO, etiqueta: ETIQUETAS_ESTADO_PQRS.EN_PROCESO },
+  { valor: EstadoPQRS.CERRADO, etiqueta: ETIQUETAS_ESTADO_PQRS.CERRADO },
+] as const;
+
+async function SeccionPqrs({
+  copropiedad,
+  searchParams,
+}: {
+  copropiedad: CopropiedadActiva;
+  searchParams: SearchParams;
+}) {
+  const estadoParam = leerParam(searchParams, "estado");
+  const estadoFiltro = (Object.values(EstadoPQRS) as string[]).includes(
+    estadoParam ?? ""
+  )
+    ? (estadoParam as EstadoPQRS)
+    : undefined;
+
+  const [resumen, pqrs, unidades, prestadores] = await Promise.all([
+    getResumenPqrs(copropiedad.id),
+    getPqrsDeCopropiedad(copropiedad.id, estadoFiltro),
+    getUnidadesConResidentes(copropiedad.id),
+    getPrestadores(copropiedad.id),
+  ]);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <EncabezadoPagina
+        titulo="PQRS y convivencia"
+        descripcion={`${resumen.total} radicadas en total · ${resumen.ABIERTO} pendientes · ${resumen.EN_PROCESO} en gestión.`}
+        accion={
+          <FormPanel
+            triggerLabel="Radicar PQRS"
             title="Radicar PQRS"
             description="Registra una petición, queja, reclamo o sugerencia dirigida a un residente."
             icon={<MessageSquarePlus className="h-4 w-4" />}
           >
-            <CrearPqrsForm copropiedades={copropiedades} />
+            <CrearPqrsForm unidades={unidades} />
           </FormPanel>
-        ) : null}
-      </div>
+        }
+      />
 
-      <FadeIn className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard
-          etiqueta={ETIQUETAS_ESTADO_PQRS.ABIERTO}
-          valor={String(resumen.ABIERTO)}
-          tono={resumen.ABIERTO > 0 ? "alerta" : "positivo"}
-          icono={Clock}
-        />
-        <StatCard
-          etiqueta={ETIQUETAS_ESTADO_PQRS.EN_PROCESO}
-          valor={String(resumen.EN_PROCESO)}
-          icono={Loader2}
-        />
-        <StatCard
-          etiqueta={ETIQUETAS_ESTADO_PQRS.CERRADO}
-          valor={String(resumen.CERRADO)}
-          tono="positivo"
-          icono={CheckCircle2}
-        />
-      </FadeIn>
+      <FilaFiltros etiquetaAccesible="Filtrar PQRS por estado">
+        {FILTROS_PQRS.map((filtro) => (
+          <FiltroPill
+            key={filtro.etiqueta}
+            href={
+              filtro.valor ? `/dashboard/pqrs?estado=${filtro.valor}` : "/dashboard/pqrs"
+            }
+            activo={filtro.valor === estadoFiltro}
+          >
+            {filtro.etiqueta}
+          </FiltroPill>
+        ))}
+      </FilaFiltros>
 
-      <section className="flex flex-col gap-4">
-        <nav className="flex flex-wrap gap-2">
-          {FILTROS_PQRS.map((filtro) => {
-            const activo = filtro.valor === estadoFiltro;
-            return (
-              <FiltroPill
-                key={filtro.etiqueta}
-                href={filtro.valor ? `/dashboard/pqrs?estado=${filtro.valor}` : "/dashboard/pqrs"}
-                activo={activo}
-              >
-                {filtro.etiqueta}
-              </FiltroPill>
-            );
-          })}
-        </nav>
-
-        <PqrsList items={pqrs} />
-      </section>
+      <PqrsList items={pqrs} prestadores={prestadores} />
     </div>
   );
 }
 
-async function SeccionPropiedades({ administradorId }: { administradorId: string }) {
-  const inmuebles = await getInmueblesDelAdministradorParaMarketplace(administradorId);
-  const publicados = inmuebles.filter((i) => i.disponibleArriendo).length;
+// --------------------------------- RESIDENTES -------------------------------
 
-  return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Propiedades en el marketplace
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Gestiona qué inmuebles aparecen publicados en{" "}
-            <Link href="/propiedades" className="text-brand-700 underline underline-offset-2">
-              /propiedades
-            </Link>
-            .
-          </p>
-        </div>
-        <span className="rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 dark:bg-brand-950/40 dark:text-brand-300">
-          {publicados} de {inmuebles.length} publicados
-        </span>
-      </div>
-
-      <InmueblesAdminList inmuebles={inmuebles} />
-    </div>
-  );
-}
-
-async function SeccionReservas({
-  administradorId,
-  searchParams,
+async function SeccionResidentes({
+  copropiedad,
 }: {
-  administradorId: string;
-  searchParams: Awaited<PageProps<"/dashboard/[section]">["searchParams"]>;
+  copropiedad: CopropiedadActiva;
 }) {
-  const estadoParam = typeof searchParams.estado === "string" ? searchParams.estado : undefined;
-  const estadoFiltro = esEstadoReservaValido(estadoParam) ? estadoParam : undefined;
-
-  const [zonas, reservas, copropiedades] = await Promise.all([
-    getZonasComunesDeAdministrador(administradorId),
-    getReservasDeAdministrador(administradorId, estadoFiltro),
-    getCopropiedadesDelAdministrador(administradorId),
+  const [residentes, historicos, unidades] = await Promise.all([
+    getResidentesDeCopropiedad(copropiedad.id),
+    getResidentesHistoricos(copropiedad.id),
+    getUnidadesParaInvitar(copropiedad.id),
   ]);
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Reservas de zonas comunes
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Los residentes radican sus propias reservas desde su portal. Un inmueble con cuentas
-          en mora no puede solicitar ni confirmar reservas.
-        </p>
-      </div>
-
-      <section className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Zonas comunes</h2>
-          {copropiedades.length > 0 ? (
-            <FormPanel
-              triggerLabel="Nueva zona común"
-              title="Crear zona común"
-              description="ej. Salón social, Zona BBQ, Cancha múltiple."
-              icon={<CalendarPlus className="h-4 w-4" />}
-              variant="accent"
-            >
-              <CrearZonaComunForm
-                copropiedades={copropiedades.map(({ id, nombre }) => ({ id, nombre }))}
-              />
-            </FormPanel>
-          ) : null}
-        </div>
-        <ZonasComunesList zonas={zonas} />
-      </section>
-
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Agenda</h2>
-        <nav className="flex flex-wrap gap-2">
-          {FILTROS_RESERVA.map((filtro) => {
-            const activo = filtro.valor === estadoFiltro;
-            return (
-              <FiltroPill
-                key={filtro.etiqueta}
-                href={filtro.valor ? `/dashboard/reservas?estado=${filtro.valor}` : "/dashboard/reservas"}
-                activo={activo}
-              >
-                {filtro.etiqueta}
-              </FiltroPill>
-            );
-          })}
-        </nav>
-        <AgendaReservas reservas={reservas} />
-      </section>
-    </div>
-  );
-}
-
-async function SeccionResidentes({ administradorId }: { administradorId: string }) {
-  const [copropiedades, residentes] = await Promise.all([
-    getCopropiedadesConInmueblesParaInvitar(administradorId),
-    getResidentesDeAdministrador(administradorId),
-  ]);
-
-  return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Residentes
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Invita a propietarios e inquilinos para que puedan entrar a su propio portal.
-          </p>
-        </div>
-        {copropiedades.length > 0 ? (
+      <EncabezadoPagina
+        titulo="Residentes"
+        descripcion="Propietarios e inquilinos con acceso a su portal. La cartera pertenece a la unidad, no a la persona."
+        accion={
           <FormPanel
             triggerLabel="Invitar residente"
             title="Invitar residente"
-            description="Le crea acceso a su propio portal y lo vincula a un inmueble. La contraseña temporal se muestra una sola vez."
+            description="Le crea acceso a su portal y lo vincula a una unidad."
             icon={<UserPlus className="h-4 w-4" />}
           >
-            <InvitarResidenteForm copropiedades={copropiedades} />
+            <InvitarResidenteForm unidades={unidades} />
           </FormPanel>
-        ) : null}
-      </div>
+        }
+      />
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          Residentes vinculados
-        </h2>
+      <Seccion titulo={`Vinculados (${residentes.length})`}>
         <ResidentesList residentes={residentes} />
-      </section>
+      </Seccion>
+
+      <Seccion
+        titulo="Historial de vínculos"
+        descripcion="Vínculos revocados. Nunca se borran: son parte de la trazabilidad de la unidad."
+      >
+        <ResidentesHistoricosList residentes={historicos} />
+      </Seccion>
+    </div>
+  );
+}
+
+// --------------------------------- PRESTADORES ------------------------------
+
+async function SeccionPrestadores({
+  copropiedad,
+}: {
+  copropiedad: CopropiedadActiva;
+}) {
+  const [prestadores, ordenes, pqrsEscalables] = await Promise.all([
+    getPrestadores(copropiedad.id),
+    getOrdenesServicio(copropiedad.id),
+    getPqrsEscalables(copropiedad.id),
+  ]);
+
+  const abiertas = ordenes.filter(
+    (orden) =>
+      orden.estado === EstadoOrdenServicio.ABIERTA ||
+      orden.estado === EstadoOrdenServicio.EN_PROCESO
+  ).length;
+
+  return (
+    <div className="flex flex-col gap-8">
+      <EncabezadoPagina
+        titulo="Prestadores y órdenes"
+        descripcion="Seguridad, aseo, jardinería, mantenimiento y obra. En este MVP los prestadores no inician sesión: sus datos y sus órdenes las administras tú."
+        accion={
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <FormPanel
+              triggerLabel="Agregar prestador"
+              title="Agregar prestador al directorio"
+              description="Queda disponible para asignarle órdenes de servicio."
+              icon={<HardHat className="h-4 w-4" />}
+            >
+              <CrearPrestadorForm />
+            </FormPanel>
+            <FormPanel
+              triggerLabel="Nueva orden"
+              title="Crear orden de servicio"
+              description="Deja por escrito qué se le pidió a un prestador. Puedes vincularla a una PQRS de mantenimiento."
+              icon={<HardHat className="h-4 w-4" />}
+              variant="accent"
+            >
+              <CrearOrdenForm
+                prestadores={prestadores}
+                pqrsDisponibles={pqrsEscalables}
+              />
+            </FormPanel>
+          </div>
+        }
+      />
+
+      <Seccion titulo={`Directorio (${prestadores.length})`}>
+        <PrestadoresList prestadores={prestadores} />
+      </Seccion>
+
+      <Seccion
+        titulo={`Órdenes de servicio (${abiertas} abiertas)`}
+        descripcion="El costo estimado es una referencia de presupuesto: Rentu no hace pagos, conciliación ni contabilidad."
+      >
+        <OrdenesServicioList ordenes={ordenes} />
+      </Seccion>
+    </div>
+  );
+}
+
+// --------------------------------- DOCUMENTOS -------------------------------
+
+async function SeccionDocumentos({
+  copropiedad,
+}: {
+  copropiedad: CopropiedadActiva;
+}) {
+  const documentos = await getDocumentosPHDeCopropiedad(copropiedad.id);
+
+  return (
+    <div className="flex flex-col gap-8">
+      <EncabezadoPagina
+        titulo="Documentos y Copiloto"
+        descripcion="Reglamento, manual de convivencia y actas indexados para consultarlos en lenguaje natural."
+        accion={
+          <FormPanel
+            triggerLabel="Indexar documento"
+            title="Indexar documento de la copropiedad"
+            description="Se trocea el texto y se generan embeddings con un modelo local (sin costo por consulta)."
+            icon={<FileStack className="h-4 w-4" />}
+          >
+            <SubirDocumentoForm />
+          </FormPanel>
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Seccion titulo={`Documentos indexados (${documentos.length})`}>
+          <DocumentosPHList documentos={documentos} />
+        </Seccion>
+
+        <CopilotoChat
+          copropiedadId={copropiedad.id}
+          nombreCopropiedad={copropiedad.nombre}
+          tieneDocumentos={documentos.length > 0}
+        />
+      </div>
     </div>
   );
 }

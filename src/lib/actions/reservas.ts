@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EstadoReserva, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getAdministradorActual, getResidenteActual } from "@/lib/session";
+import {
+  getAdministradorActual,
+  getContextoAdministrador,
+  getResidenteActual,
+} from "@/lib/session";
 import {
   existeCruceDeHorario,
   inmuebleNoEstaAPazYSalvo,
@@ -23,7 +27,6 @@ export async function crearZonaComun(
   formData: FormData
 ): Promise<EstadoAccionReserva> {
   const validado = crearZonaComunSchema.safeParse({
-    copropiedadId: formData.get("copropiedadId"),
     nombre: formData.get("nombre"),
     descripcion: formData.get("descripcion") ?? "",
     aforo: formData.get("aforo"),
@@ -38,27 +41,21 @@ export async function crearZonaComun(
     };
   }
 
-  const { copropiedadId, nombre, descripcion, aforo, costo } = validado.data;
+  const { nombre, descripcion, aforo, costo } = validado.data;
 
   try {
-    const administrador = await getAdministradorActual();
-
-    const copropiedad = await prisma.copropiedad.findFirst({
-      where: {
-        id: copropiedadId,
-        deletedAt: null,
-        administradores: { some: { usuarioId: administrador.id, deletedAt: null } },
-      },
-      select: { id: true },
-    });
+    const { copropiedad } = await getContextoAdministrador();
 
     if (!copropiedad) {
-      return { status: "error", message: "La copropiedad no existe o no tienes acceso a ella." };
+      return {
+        status: "error",
+        message: "No tienes una copropiedad asignada todavía.",
+      };
     }
 
     await prisma.zonaComun.create({
       data: {
-        copropiedadId,
+        copropiedadId: copropiedad.id,
         nombre,
         descripcion: descripcion || null,
         aforo,
@@ -122,12 +119,14 @@ export async function crearReservaResidente(
     }
 
     // Regla de negocio: un inmueble sin paz y salvo (vencido o en mora) no
-    // puede solicitar reservas.
+    // puede solicitar reservas. El mensaje explica la razón y el camino de
+    // salida en vez de solo negar: quien lo lee es un residente, no un
+    // deudor abstracto.
     if (await inmuebleNoEstaAPazYSalvo(inmuebleActivo.inmueble.id)) {
       return {
         status: "error",
         message:
-          "Tu inmueble tiene cuentas vencidas o en mora. Debe estar a paz y salvo para solicitar una reserva.",
+          "Tu unidad tiene cuotas vencidas, y el reglamento pide estar a paz y salvo para reservar zonas comunes. En cuanto se registre el pago podrás radicar la reserva. Si ya pagaste o tienes un acuerdo, escríbele a la administración por PQRS y lo revisa.",
       };
     }
 

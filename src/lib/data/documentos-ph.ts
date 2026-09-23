@@ -1,33 +1,25 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
-/** Documentos indexados de todas las copropiedades que administra `administradorId`. */
-export const getDocumentosPHDelAdministrador = cache(
-  async (administradorId: string) => {
+/** Documentos indexados de la copropiedad activa. */
+export const getDocumentosPHDeCopropiedad = cache(
+  async (copropiedadId: string) => {
     return prisma.documentoPH.findMany({
-      where: {
-        deletedAt: null,
-        copropiedad: {
-          administradores: {
-            some: { usuarioId: administradorId, deletedAt: null },
-          },
-        },
-      },
+      where: { copropiedadId, deletedAt: null },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
         tipo: true,
         titulo: true,
         createdAt: true,
-        copropiedad: { select: { nombre: true } },
         _count: { select: { chunks: true } },
       },
     });
   }
 );
 
-export type DocumentoPHConCopropiedad = Awaited<
-  ReturnType<typeof getDocumentosPHDelAdministrador>
+export type DocumentoPHIndexado = Awaited<
+  ReturnType<typeof getDocumentosPHDeCopropiedad>
 >[number];
 
 export type ChunkRelevante = {

@@ -1,11 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Prisma, EstadoCuenta } from "@prisma/client";
+import { Prisma, EstadoCuenta, TipoGestionCobro } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getAdministradorActual } from "@/lib/session";
-import { calcularSaldoPendiente } from "@/lib/data/cuentas-cobro";
+import { calcularSaldoPendiente } from "@/lib/data/cartera";
 import { registrarPagoSchema } from "@/lib/validations/pagos";
 import type { EstadoAccionFormulario } from "@/lib/types/estado-accion";
 
@@ -93,9 +93,25 @@ async function aplicarPago(params: {
         estado: quedaSaldada ? EstadoCuenta.PAGADA : cuenta.estado,
       },
     }),
+    // El pago queda también en la bitácora de gestión de la unidad: al abrir
+    // el detalle, el administrador ve en una sola línea de tiempo las
+    // llamadas, los avisos y los pagos que resultaron de ellos.
+    prisma.gestionCobro.create({
+      data: {
+        inmuebleId: cuenta.inmuebleId,
+        registradoPorId: administrador.id,
+        tipo: TipoGestionCobro.NOTA,
+        nota: quedaSaldada
+          ? `Pago registrado por $${montoPago.toFixed(0)} (${params.metodo}). La cuenta ${cuenta.periodo} quedó saldada.`
+          : `Abono registrado por $${montoPago.toFixed(0)} (${params.metodo}) sobre la cuenta ${cuenta.periodo}.`,
+      },
+    }),
   ]);
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/cartera");
+  revalidatePath("/portal");
+  revalidatePath("/portal/cartera");
 
   return {
     status: "success",

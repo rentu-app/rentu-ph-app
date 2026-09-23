@@ -22,7 +22,7 @@
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
+  previewFeatures = ["postgresqlExtensions", "relationJoins"]
 }
 
 datasource db {
@@ -99,6 +99,57 @@ enum EstadoReserva {
   CANCELADA
 }
 
+// Etapa de seguimiento de cobro de una unidad. Es una CLASIFICACIÓN DE
+// GESTIÓN interna del administrador (la misma que usan los informes de
+// cartera por antigüedad), NO una acción legal: PREJURIDICO y JURIDICO
+// solo significan "este caso ya se escaló a ese seguimiento", nunca que
+// Rentu inicie un proceso judicial ni preste asesoría legal.
+enum EtapaCobro {
+  AL_DIA
+  RECORDATORIO
+  COBRO_PERSUASIVO
+  ACUERDO_PAGO
+  PREJURIDICO
+  JURIDICO
+}
+
+// Tipo de entrada en la bitácora de gestión de cobro de una unidad.
+enum TipoGestionCobro {
+  NOTA
+  LLAMADA
+  VISITA
+  CAMBIO_ETAPA
+  ACUERDO_PAGO
+  AVISO_ENVIADO
+}
+
+// Canal por el que se "envió" un aviso de cobro. En el MVP ningún canal
+// está integrado: `NotificacionCobro.simulada` es siempre true y la UI lo
+// declara explícitamente.
+enum CanalNotificacion {
+  CORREO
+  WHATSAPP
+  CARTA
+}
+
+enum TipoPrestador {
+  SEGURIDAD
+  ASEO
+  JARDINERIA
+  MANTENIMIENTO
+  OBRA
+  PISCINA
+  GIMNASIO
+  OTRO
+}
+
+enum EstadoOrdenServicio {
+  ABIERTA
+  EN_PROCESO
+  CERRADA
+  CANCELADA
+}
+
 // --------------------------- IDENTIDAD Y RBAC -------------------------------
 
 model Usuario {
@@ -126,6 +177,9 @@ model Usuario {
   pqrsRespondidos            Pqrs[]                     @relation("PqrsRespondidoPor")
   pqrsDirigidas              Pqrs[]                     @relation("PqrsDirigidoA")
   reservasSolicitadas        Reserva[]                  @relation("ReservaSolicitadaPor")
+  gestionesCobroRegistradas  GestionCobro[]             @relation("GestionCobroRegistradaPor")
+  notificacionesCobroCreadas NotificacionCobro[]        @relation("NotificacionCobroCreadaPor")
+  ordenesServicioCreadas     OrdenServicio[]            @relation("OrdenServicioCreadaPor")
 
   @@index([rol])
   @@map("usuarios")
@@ -147,6 +201,8 @@ model Copropiedad {
   comunicados     Comunicado[]
   documentosPH    DocumentoPH[]
   zonasComunes    ZonaComun[]
+  prestadores     Prestador[]
+  ordenesServicio OrdenServicio[]
 
   @@map("copropiedades")
 }
@@ -175,34 +231,51 @@ model Inmueble {
   id            String         @id @default(uuid()) @db.Uuid
   copropiedadId String         @db.Uuid
   identificador String // p.ej. "Apto 101", "Casa 12"
+  // Agrupador físico dentro de la copropiedad (torre, bloque o etapa). Es
+  // el eje por el que el administrador lee la cartera ("¿qué torre
+  // concentra la mora?"), así que se guarda como texto libre normalizado
+  // por la aplicación en vez de una tabla aparte: una PH pequeña/mediana
+  // tiene 1–6 torres y renombrarlas es más frecuente que relacionarlas.
+  torre         String         @default("Torre 1")
   coeficiente   Decimal        @db.Decimal(7, 5) // coeficiente de copropiedad (Ley 675)
   areaM2        Decimal?       @db.Decimal(8, 2)
   estado        EstadoInmueble @default(OCUPADO)
+  // Etapa de seguimiento de cobro. La cambia SIEMPRE el administrador de
+  // forma explícita (queda registrada en `GestionCobro`); ningún job la
+  // escala solo.
+  etapaCobro    EtapaCobro     @default(AL_DIA)
 
-  // --- Marketplace de arriendo (publicación pública en /propiedades) -------
-  // `areaM2` de arriba se reutiliza para el catálogo — no se duplica el campo.
-  disponibleArriendo Boolean   @default(true)
-  canonArriendo      Decimal?  @db.Decimal(12, 2)
-  habitaciones       Int?
-  banos              Int?
+  // --- DEPRECADO: campos del marketplace de arriendo -----------------------
+  // El MVP dejó de ser un marketplace de arriendos (ver README). Estos
+  // campos ya no se leen ni se escriben desde ninguna pantalla, Server
+  // Action o seed; se conservan en el schema para no perder datos
+  // existentes con una migración destructiva. Retirarlos requiere una
+  // migración aparte, deliberada.
+  disponibleArriendo  Boolean  @default(false)
+  canonArriendo       Decimal? @db.Decimal(12, 2)
+  habitaciones        Int?
+  banos               Int?
   descripcionArriendo String?
-  imagenUrl          String?
+  imagenUrl           String?
 
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  copropiedad    Copropiedad       @relation(fields: [copropiedadId], references: [id])
-  residentes     UsuarioInmueble[]
-  vehiculos      Vehiculo[]
-  mascotas       Mascota[]
-  cuentasDeCobro CuentaDeCobro[]
-  pqrs           Pqrs[]
-  reservas       Reserva[]
+  copropiedad         Copropiedad         @relation(fields: [copropiedadId], references: [id])
+  residentes          UsuarioInmueble[]
+  vehiculos           Vehiculo[]
+  mascotas            Mascota[]
+  cuentasDeCobro      CuentaDeCobro[]
+  pqrs                Pqrs[]
+  reservas            Reserva[]
+  gestionesCobro      GestionCobro[]
+  notificacionesCobro NotificacionCobro[]
 
   @@unique([copropiedadId, identificador])
   @@index([copropiedadId])
-  @@index([disponibleArriendo])
+  @@index([copropiedadId, torre])
+  @@index([etapaCobro])
   @@map("inmuebles")
 }
 
@@ -443,14 +516,18 @@ model Pqrs {
   updatedAt            DateTime   @updatedAt
   deletedAt            DateTime?
 
-  inmueble           Inmueble @relation(fields: [inmuebleId], references: [id])
-  radicadoPor        Usuario  @relation("PqrsRadicadoPor", fields: [radicadoPorId], references: [id])
-  asignadoA          Usuario? @relation("PqrsAsignadoA", fields: [asignadoAId], references: [id])
-  respondidoPor      Usuario? @relation("PqrsRespondidoPor", fields: [respondidoPorId], references: [id])
-  dirigidoA          Usuario? @relation("PqrsDirigidoA", fields: [dirigidoAId], references: [id])
+  inmueble           Inmueble        @relation(fields: [inmuebleId], references: [id])
+  radicadoPor        Usuario         @relation("PqrsRadicadoPor", fields: [radicadoPorId], references: [id])
+  asignadoA          Usuario?        @relation("PqrsAsignadoA", fields: [asignadoAId], references: [id])
+  respondidoPor      Usuario?        @relation("PqrsRespondidoPor", fields: [respondidoPorId], references: [id])
+  dirigidoA          Usuario?        @relation("PqrsDirigidoA", fields: [dirigidoAId], references: [id])
   // Auto-relación para agrupar tickets duplicados bajo un "Incidente Principal" (HU-06).
-  incidentePrincipal Pqrs?    @relation("AgrupacionIncidente", fields: [incidentePrincipalId], references: [id])
-  ticketsAgrupados   Pqrs[]   @relation("AgrupacionIncidente")
+  incidentePrincipal Pqrs?           @relation("AgrupacionIncidente", fields: [incidentePrincipalId], references: [id])
+  ticketsAgrupados   Pqrs[]          @relation("AgrupacionIncidente")
+  // Una PQRS de mantenimiento puede escalarse a una o más órdenes de
+  // servicio hacia un prestador externo. Nunca es automático: lo decide el
+  // administrador (ver `crearOrdenServicio`).
+  ordenesServicio    OrdenServicio[]
 
   @@index([inmuebleId])
   @@index([estado])
@@ -487,13 +564,13 @@ model DocumentoPH {
 }
 
 model DocumentoPHChunk {
-  id          String   @id @default(uuid()) @db.Uuid
-  documentoId String   @db.Uuid
+  id          String                     @id @default(uuid()) @db.Uuid
+  documentoId String                     @db.Uuid
   indice      Int // orden del fragmento dentro del documento
   contenido   String
   // vector(384) — dimensión de Xenova/paraphrase-multilingual-MiniLM-L12-v2.
   embedding   Unsupported("vector(384)")
-  createdAt   DateTime @default(now())
+  createdAt   DateTime                   @default(now())
 
   documento DocumentoPH @relation(fields: [documentoId], references: [id], onDelete: Cascade)
 
@@ -546,4 +623,109 @@ model Reserva {
   @@index([inmuebleId])
   @@index([fechaInicio])
   @@map("reservas")
+}
+
+// -------------------- GESTIÓN DE COBRO (BITÁCORA) ---------------------------
+// Respuesta a "¿qué se ha hecho con este apartamento?". Es un registro
+// append-only: una entrada por acción de cobro (nota, llamada, visita,
+// cambio de etapa, acuerdo, aviso). Cuelga de `Inmueble` y no de `Usuario`
+// para que el historial sobreviva al cambio de propietario o inquilino.
+model GestionCobro {
+  id              String           @id @default(uuid()) @db.Uuid
+  inmuebleId      String           @db.Uuid
+  registradoPorId String           @db.Uuid
+  tipo            TipoGestionCobro @default(NOTA)
+  etapaAnterior   EtapaCobro?
+  etapaNueva      EtapaCobro?
+  nota            String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+
+  inmueble      Inmueble @relation(fields: [inmuebleId], references: [id])
+  registradoPor Usuario  @relation("GestionCobroRegistradaPor", fields: [registradoPorId], references: [id])
+
+  @@index([inmuebleId])
+  @@index([createdAt])
+  @@map("gestiones_cobro")
+}
+
+// Historial de avisos de cobro. ⚠️ `simulada` es `true` por defecto y en el
+// MVP SIEMPRE vale true: no hay proveedor de correo/WhatsApp conectado, así
+// que esto guarda la vista previa del mensaje que el administrador redactó,
+// no un envío real. La UI lo rotula "Simulación MVP — no se envió correo
+// real". Si algún día se integra un proveedor, ese envío guardará
+// `simulada: false` y la UI podrá diferenciarlos sin migrar datos.
+model NotificacionCobro {
+  id            String            @id @default(uuid()) @db.Uuid
+  inmuebleId    String            @db.Uuid
+  creadoPorId   String            @db.Uuid
+  canal         CanalNotificacion @default(CORREO)
+  asunto        String
+  cuerpo        String
+  destinatarios String
+  simulada      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  deletedAt     DateTime?
+
+  inmueble  Inmueble @relation(fields: [inmuebleId], references: [id])
+  creadoPor Usuario  @relation("NotificacionCobroCreadaPor", fields: [creadoPorId], references: [id])
+
+  @@index([inmuebleId])
+  @@map("notificaciones_cobro")
+}
+
+// ------------------------ PRESTADORES Y ÓRDENES -----------------------------
+// Prestadores externos (seguridad, aseo, jardinería, mantenimiento, obra,
+// piscina, gimnasio). En este MVP NO inician sesión: son un directorio que
+// administra el administrador, más las órdenes que les asigna.
+model Prestador {
+  id            String        @id @default(uuid()) @db.Uuid
+  copropiedadId String        @db.Uuid
+  nombre        String
+  tipo          TipoPrestador @default(OTRO)
+  contacto      String?
+  telefono      String?
+  email         String?
+  notas         String?
+  activo        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+
+  copropiedad Copropiedad     @relation(fields: [copropiedadId], references: [id])
+  ordenes     OrdenServicio[]
+
+  @@unique([copropiedadId, nombre])
+  @@index([copropiedadId])
+  @@map("prestadores")
+}
+
+model OrdenServicio {
+  id              String              @id @default(uuid()) @db.Uuid
+  copropiedadId   String              @db.Uuid
+  prestadorId     String              @db.Uuid
+  creadoPorId     String              @db.Uuid
+  // PQRS de origen cuando la orden nace de una solicitud de mantenimiento
+  // de un residente. Null si el administrador la crea por su cuenta.
+  pqrsId          String?             @db.Uuid
+  titulo          String
+  descripcion     String?
+  estado          EstadoOrdenServicio @default(ABIERTA)
+  fechaProgramada DateTime?
+  costoEstimado   Decimal?            @db.Decimal(12, 2)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  deletedAt       DateTime?
+
+  copropiedad Copropiedad @relation(fields: [copropiedadId], references: [id])
+  prestador   Prestador   @relation(fields: [prestadorId], references: [id])
+  creadoPor   Usuario     @relation("OrdenServicioCreadaPor", fields: [creadoPorId], references: [id])
+  pqrs        Pqrs?       @relation(fields: [pqrsId], references: [id])
+
+  @@index([copropiedadId])
+  @@index([prestadorId])
+  @@index([estado])
+  @@map("ordenes_servicio")
 }

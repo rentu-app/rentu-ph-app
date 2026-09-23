@@ -3,7 +3,6 @@ import { EstadoReserva } from "@prisma/client";
 import { montoDecimalOpcionalSchema } from "@/lib/validations/dinero";
 
 export const crearZonaComunSchema = z.object({
-  copropiedadId: z.uuid("Copropiedad inválida"),
   nombre: z.string().trim().min(2, "Escribe un nombre").max(120, "Máximo 120 caracteres"),
   descripcion: z
     .string()

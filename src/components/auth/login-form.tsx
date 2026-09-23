@@ -1,22 +1,10 @@
 "use client";
 
 import { useActionState, useId } from "react";
-import { useFormStatus } from "react-dom";
 import { iniciarSesion } from "@/lib/actions/auth";
 import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
-
-function BotonIngresar() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-400"
-    >
-      {pending ? "Ingresando…" : "Ingresar"}
-    </button>
-  );
-}
+import { BotonSubmit } from "@/components/ui/boton";
+import { CLASES_CONTROL, Campo, MensajeAccion } from "@/components/ui/formulario";
 
 export function LoginForm({ next }: { next?: string }) {
   const [estado, accion] = useActionState(iniciarSesion, ESTADO_INICIAL_ACCION);
@@ -27,10 +15,7 @@ export function LoginForm({ next }: { next?: string }) {
     <form action={accion} className="flex flex-col gap-4">
       <input type="hidden" name="next" value={next ?? ""} />
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor={emailId} className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-          Correo
-        </label>
+      <Campo etiqueta="Correo" htmlFor={emailId}>
         <input
           id={emailId}
           name="email"
@@ -38,29 +23,26 @@ export function LoginForm({ next }: { next?: string }) {
           required
           autoComplete="email"
           placeholder="admin@copropiedad.com"
-          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+          className={CLASES_CONTROL}
         />
-      </div>
+      </Campo>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor={passwordId} className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-          Contraseña
-        </label>
+      <Campo etiqueta="Contraseña" htmlFor={passwordId}>
         <input
           id={passwordId}
           name="password"
           type="password"
           required
           autoComplete="current-password"
-          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+          className={CLASES_CONTROL}
         />
-      </div>
+      </Campo>
 
-      {estado.status === "error" ? (
-        <p className="text-sm text-red-600">{estado.message}</p>
-      ) : null}
+      <MensajeAccion estado={estado} />
 
-      <BotonIngresar />
+      <BotonSubmit pendiente="Ingresando…" className="w-full">
+        Ingresar
+      </BotonSubmit>
     </form>
   );
 }

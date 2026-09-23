@@ -1,11 +1,10 @@
 /**
  * Rutas absolutas (`/#id`) en vez de anchors relativos (`#id`) porque estos
- * enlaces se reutilizan en páginas distintas de la landing (ej. /propiedades)
- * — un anchor relativo ahí apuntaría a un id que no existe en esa página.
+ * enlaces se reutilizan en el header y el footer, que también se renderizan
+ * en páginas distintas de la landing.
  */
-// TODO: marketplace fuera del MVP, retomar después — enlace a /propiedades removido del nav.
 export const ENLACES_NAV = [
-  { href: "/#por-que-rentu", etiqueta: "Beneficios" },
-  { href: "/#modulos", etiqueta: "Módulos" },
-  { href: "/#copiloto", etiqueta: "Copiloto IA" },
+  { href: "/#modulos", etiqueta: "Qué incluye" },
+  { href: "/#por-que-rentu", etiqueta: "Por qué Rentu" },
+  { href: "/#copiloto", etiqueta: "Copiloto" },
 ] as const;

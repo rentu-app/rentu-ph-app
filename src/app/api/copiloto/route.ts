@@ -1,7 +1,7 @@
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { getAdministradorActual } from "@/lib/session";
-import { getCopropiedadPorId } from "@/lib/data/copropiedades";
+import { getCopropiedadPorId } from "@/lib/data/copropiedad";
 import { generarEmbedding } from "@/lib/ai/embeddings";
 import { buscarChunksRelevantes } from "@/lib/data/documentos-ph";
 

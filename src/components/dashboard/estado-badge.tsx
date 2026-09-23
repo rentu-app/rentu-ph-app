@@ -1,39 +1,48 @@
-import { EstadoCuenta } from "@prisma/client";
+import { EstadoCuenta, EtapaCobro } from "@prisma/client";
+import { Etiqueta, type TonoEtiqueta } from "@/components/ui/primitivos";
+import { ETIQUETAS_ETAPA_COBRO } from "@/lib/validations/cartera";
 
-const ESTILOS: Record<EstadoCuenta, string> = {
-  PENDIENTE: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  PAGADA: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  VENCIDA: "bg-orange-50 text-orange-700 ring-orange-600/20",
-  EN_MORA: "bg-red-50 text-red-700 ring-red-600/20",
+const TONO_CUENTA: Record<EstadoCuenta, TonoEtiqueta> = {
+  PENDIENTE: "alerta",
+  PAGADA: "exito",
+  VENCIDA: "peligro",
+  EN_MORA: "peligro",
 };
 
-const ETIQUETAS: Record<EstadoCuenta, string> = {
+const ETIQUETAS_CUENTA: Record<EstadoCuenta, string> = {
   PENDIENTE: "Pendiente",
   PAGADA: "Pagada",
   VENCIDA: "Vencida",
   EN_MORA: "En mora",
 };
 
-const PUNTOS: Record<EstadoCuenta, string> = {
-  PENDIENTE: "bg-amber-500",
-  PAGADA: "bg-emerald-500",
-  VENCIDA: "bg-orange-500",
-  EN_MORA: "bg-red-500",
+/**
+ * Los puntos ya no pulsan (`animate-pulse`). Una animación infinita obliga al
+ * navegador a repintar en cada frame mientras el elemento está en pantalla, y
+ * con una tabla de 24 unidades eran 24 animaciones permanentes compitiendo
+ * con el scroll.
+ */
+export function EstadoCuentaBadge({ estado }: { estado: EstadoCuenta }) {
+  return <Etiqueta tono={TONO_CUENTA[estado]}>{ETIQUETAS_CUENTA[estado]}</Etiqueta>;
+}
+
+const TONO_ETAPA: Record<EtapaCobro, TonoEtiqueta> = {
+  AL_DIA: "exito",
+  RECORDATORIO: "info",
+  COBRO_PERSUASIVO: "alerta",
+  ACUERDO_PAGO: "marca",
+  PREJURIDICO: "peligro",
+  JURIDICO: "peligro",
 };
 
-const CON_PULSO: EstadoCuenta[] = ["VENCIDA", "EN_MORA"];
+export function EtapaCobroBadge({ etapa }: { etapa: EtapaCobro }) {
+  return <Etiqueta tono={TONO_ETAPA[etapa]}>{ETIQUETAS_ETAPA_COBRO[etapa]}</Etiqueta>;
+}
 
-export function EstadoCuentaBadge({ estado }: { estado: EstadoCuenta }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${ESTILOS[estado]}`}
-    >
-      <span
-        className={`h-1.5 w-1.5 rounded-full ${PUNTOS[estado]} ${
-          CON_PULSO.includes(estado) ? "animate-pulse" : ""
-        }`}
-      />
-      {ETIQUETAS[estado]}
-    </span>
-  );
+/** Días de mora en texto corto, con color proporcional al atraso. */
+export function DiasMoraBadge({ dias }: { dias: number }) {
+  if (dias <= 0) return <Etiqueta tono="exito">Al día</Etiqueta>;
+
+  const tono: TonoEtiqueta = dias > 90 ? "peligro" : dias > 30 ? "alerta" : "info";
+  return <Etiqueta tono={tono}>{dias} día(s)</Etiqueta>;
 }

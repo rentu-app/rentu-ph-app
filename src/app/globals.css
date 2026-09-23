@@ -1,12 +1,7 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 /*
- * Sistema de diseño Rentu — paleta unificada para Landing y Dashboard.
+ * Sistema de diseño Rentu — paleta unificada para Landing, Dashboard y Portal.
  * `brand` (azul, confianza/marca) y `accent` (amarillo, energía/CTA) son
  * tokens semánticos: el resto de la app usa `bg-brand-600`, `text-accent-500`,
  * etc. en vez de nombres de color literales, para poder re-tematizar desde
@@ -37,6 +32,11 @@
   --color-accent-900: #78350f;
 }
 
+/*
+ * Mapea los tokens que vienen de fuera del CSS (variables de `next/font` en
+ * el layout raíz y los colores de fondo/texto) a utilidades de Tailwind:
+ * `font-sans` → Geist, `bg-background`, `text-foreground`.
+ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -44,20 +44,104 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/*
+ * `dark:` deja de depender de `prefers-color-scheme` y pasa a depender de la
+ * clase `.dark` en <html>. Razón: la app solo tiene tema claro terminado —
+ * el Dashboard tenía variantes `dark:` y el Portal no, así que un visitante
+ * con el sistema en oscuro veía la mitad de la app con texto claro sobre
+ * fondo claro. Con esta variante el tema oscuro nunca se activa por
+ * accidente, y el día que se termine basta con poner `class="dark"` en el
+ * <html> del layout raíz (las variantes `dark:` del código ya existen).
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  color-scheme: light;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  /* Evita el "rubber band" horizontal en móvil cuando una tabla ancha
+     desborda su contenedor por un bug de estilos. */
+  overflow-x: hidden;
 }
 
-@keyframes shimmer {
+/*
+ * ---------------------------------------------------------------------------
+ * Animaciones
+ * ---------------------------------------------------------------------------
+ * Todas son CSS puro y animan SOLO `opacity` y `transform` (propiedades que
+ * el compositor resuelve sin recalcular layout). Antes esto lo hacía
+ * framer-motion: además de ~40 KB de JS en el cliente, obligaba a convertir
+ * listas y tablas que son Server Components en Client Components y animaba
+ * `layout` (el subrayado de tabs y la píldora del nav), que sí recalcula
+ * layout en cada frame y era la causa del jank al navegar en móvil.
+ */
+@keyframes rentu-aparecer {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rentu-fundido {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rentu-subir-hoja {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rentu-shimmer {
   100% {
     transform: translateX(100%);
+  }
+}
+
+@utility aparecer {
+  animation: rentu-aparecer 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility fundido {
+  animation: rentu-fundido 160ms linear both;
+}
+
+@utility subir-hoja {
+  animation: rentu-subir-hoja 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Barra de progreso de las gráficas de cartera: el ancho llega como
+   `--valor` (0–100) desde el servidor, así no hace falta JS. */
+@utility barra-valor {
+  width: calc(var(--valor, 0) * 1%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

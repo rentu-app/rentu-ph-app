@@ -1,34 +1,18 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import { EstadoReserva } from "@prisma/client";
 import { actualizarEstadoReserva } from "@/lib/actions/reservas";
 import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
+import { BotonSubmit } from "@/components/ui/boton";
 
-function BotonEstado({
-  estado,
-  etiqueta,
-  claseActiva,
-}: {
-  estado: EstadoReserva;
-  etiqueta: string;
-  claseActiva: string;
-}) {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      name="estado"
-      value={estado}
-      disabled={pending}
-      className={`min-h-11 rounded-md px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:py-1.5 ${claseActiva}`}
-    >
-      {etiqueta}
-    </button>
-  );
-}
-
+/**
+ * Confirma, cancela o vuelve a dejar pendiente una reserva.
+ *
+ * Al confirmar, el servidor revalida la regla de paz y salvo (el estado de
+ * cartera pudo cambiar después de radicada la solicitud) y el cruce de
+ * horario; si algo falla, el mensaje se muestra acá debajo.
+ */
 export function GestionarReservaForm({
   reservaId,
   estadoActual,
@@ -36,36 +20,64 @@ export function GestionarReservaForm({
   reservaId: string;
   estadoActual: EstadoReserva;
 }) {
-  const [estado, accion] = useActionState(actualizarEstadoReserva, ESTADO_INICIAL_ACCION);
+  const [estado, accion] = useActionState(
+    actualizarEstadoReserva,
+    ESTADO_INICIAL_ACCION
+  );
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex w-full flex-col gap-1.5 sm:items-end">
       <form action={accion} className="flex flex-wrap items-center gap-2">
         <input type="hidden" name="reservaId" value={reservaId} />
+
         {estadoActual !== EstadoReserva.CONFIRMADA ? (
-          <BotonEstado
-            estado={EstadoReserva.CONFIRMADA}
-            etiqueta="Confirmar"
-            claseActiva="bg-emerald-600 text-white hover:bg-emerald-500"
-          />
+          <BotonSubmit
+            name="estado"
+            value={EstadoReserva.CONFIRMADA}
+            tamanio="sm"
+            pendiente="…"
+          >
+            Confirmar
+          </BotonSubmit>
         ) : null}
+
         {estadoActual !== EstadoReserva.CANCELADA ? (
-          <BotonEstado
-            estado={EstadoReserva.CANCELADA}
-            etiqueta="Cancelar"
-            claseActiva="border border-zinc-300 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          />
+          <BotonSubmit
+            name="estado"
+            value={EstadoReserva.CANCELADA}
+            variante="neutro"
+            tamanio="sm"
+            pendiente="…"
+          >
+            Cancelar
+          </BotonSubmit>
         ) : null}
+
         {estadoActual !== EstadoReserva.PENDIENTE ? (
-          <BotonEstado
-            estado={EstadoReserva.PENDIENTE}
-            etiqueta="Volver a pendiente"
-            claseActiva="border border-zinc-300 text-zinc-500 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
-          />
+          <BotonSubmit
+            name="estado"
+            value={EstadoReserva.PENDIENTE}
+            variante="neutro"
+            tamanio="sm"
+            pendiente="…"
+          >
+            Volver a pendiente
+          </BotonSubmit>
         ) : null}
       </form>
+
       {estado.status === "error" ? (
-        <p className="text-xs text-red-600">{estado.message}</p>
+        <p
+          role="status"
+          className="max-w-md text-xs font-medium text-red-600 sm:text-right"
+        >
+          {estado.message}
+        </p>
+      ) : null}
+      {estado.status === "success" ? (
+        <p role="status" className="text-xs font-medium text-emerald-600">
+          {estado.message}
+        </p>
       ) : null}
     </div>
   );

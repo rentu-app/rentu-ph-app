@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { motion } from "framer-motion";
 
 /**
  * Tabs livianas: todos los paneles (cada uno ya trae su propio
@@ -9,6 +8,11 @@ import { motion } from "framer-motion";
  * sola vez y solo se ocultan con `hidden` al cambiar de pestaña — así no se
  * vuelven a pedir los datos al servidor cada vez que el usuario cambia de
  * tab.
+ *
+ * El subrayado de la pestaña activa es un borde estático. Antes era un
+ * `motion.span layoutId` de framer-motion: animar `layout` obliga al
+ * navegador a medir y recalcular posiciones en cada frame, y en móvil ese
+ * era uno de los puntos donde la interfaz se sentía trabada.
  *
  * `icon` recibe el ícono ya renderizado (ej. `<Building2 className="h-4
  * w-4" />`), no la referencia al componente: un Server Component no puede
@@ -26,36 +30,37 @@ export function Tabs({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex gap-1 overflow-x-auto border-b border-zinc-200 dark:border-zinc-800">
+      {/* `-mx-4 px-4` deja que la fila sangre hasta el borde en móvil: así se
+          ve que hay más pestañas para scrollear en vez de cortarse contra el
+          padding del contenedor. */}
+      <div
+        role="tablist"
+        className="-mx-4 flex gap-1 overflow-x-auto border-b border-zinc-200 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {tabs.map((tab) => {
           const seleccionada = activo === tab.id;
           return (
             <button
               key={tab.id}
               type="button"
+              role="tab"
+              aria-selected={seleccionada}
               onClick={() => setActivo(tab.id)}
-              className={`relative flex min-h-11 shrink-0 items-center gap-2 px-4 text-sm font-medium transition-colors ${
+              className={`flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-medium transition-colors ${
                 seleccionada
-                  ? "text-brand-700 dark:text-brand-400"
-                  : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                  ? "border-brand-600 text-brand-700"
+                  : "border-transparent text-zinc-500 hover:text-zinc-800"
               }`}
             >
               {tab.icon}
               {tab.label}
-              {seleccionada ? (
-                <motion.span
-                  layoutId="rentu-tab-underline"
-                  className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-brand-600 dark:bg-brand-400"
-                  transition={{ type: "spring", duration: 0.35, bounce: 0.2 }}
-                />
-              ) : null}
             </button>
           );
         })}
       </div>
 
       {tabs.map((tab) => (
-        <div key={tab.id} hidden={activo !== tab.id}>
+        <div key={tab.id} role="tabpanel" hidden={activo !== tab.id}>
           {panels[tab.id]}
         </div>
       ))}

@@ -1,10 +1,16 @@
-import { EstadoCuenta, EstadoPQRS, EstadoReserva, Prisma } from "@prisma/client";
+import Link from "next/link";
+import { EstadoPQRS, EstadoReserva } from "@prisma/client";
+import { CalendarClock, CheckCircle2, MessagesSquare, Wallet } from "lucide-react";
 import { getResidenteActual } from "@/lib/session";
-import { getCuentasDeCobroDeResidente } from "@/lib/data/cartera-residente";
-import { calcularSaldoPendiente } from "@/lib/data/cuentas-cobro";
+import { getCarteraDeResidente } from "@/lib/data/cartera-residente";
 import { getPqrsDeResidente } from "@/lib/data/pqrs";
 import { getReservasDeResidente } from "@/lib/data/reservas";
 import { StatCard } from "@/components/dashboard/stat-card";
+import {
+  EncabezadoPagina,
+  EstadoVacio,
+  Tarjeta,
+} from "@/components/ui/primitivos";
 import { formatearMoneda } from "@/lib/formatters";
 
 export const metadata = {
@@ -16,52 +22,109 @@ export default async function PortalHomePage() {
 
   if (!inmuebleActivo) {
     return (
-      <p className="rounded-xl border border-dashed border-zinc-300 bg-white p-6 text-sm text-zinc-500">
-        No tienes ningún inmueble activo vinculado. Contacta a tu administrador.
-      </p>
+      <EstadoVacio
+        titulo="No tienes una unidad vinculada"
+        descripcion="Contacta a la administración de tu conjunto para que te vincule a tu apartamento."
+      />
     );
   }
 
-  const [cuentas, pqrs, reservas] = await Promise.all([
-    getCuentasDeCobroDeResidente(inmuebleActivo.inmueble.id),
+  const [cartera, pqrs, reservas] = await Promise.all([
+    getCarteraDeResidente(inmuebleActivo.inmueble.id),
     getPqrsDeResidente(usuario.id, inmuebleActivo.inmueble.id),
     getReservasDeResidente(inmuebleActivo.inmueble.id),
   ]);
 
-  const saldoPendiente = cuentas
-    .filter((cuenta) => cuenta.estado !== EstadoCuenta.PAGADA)
-    .reduce((suma, cuenta) => suma.plus(calcularSaldoPendiente(cuenta)), new Prisma.Decimal(0));
-
   const pqrsAbiertas = pqrs.filter((item) => item.estado !== EstadoPQRS.CERRADO).length;
-
+  const ahora = new Date();
   const proximasReservas = reservas.filter(
     (reserva) =>
-      reserva.estado !== EstadoReserva.CANCELADA && new Date(reserva.fechaInicio) > new Date()
+      reserva.estado !== EstadoReserva.CANCELADA &&
+      new Date(reserva.fechaInicio) > ahora
   ).length;
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900">
-          Hola, {usuario.nombre.split(" ")[0]}
-        </h1>
-        <p className="text-sm text-zinc-500">
-          {inmuebleActivo.inmueble.identificador} — {inmuebleActivo.inmueble.copropiedad.nombre}
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <EncabezadoPagina
+        titulo={`Hola, ${usuario.nombre.split(" ")[0]}`}
+        descripcion={`${inmuebleActivo.inmueble.identificador} · ${inmuebleActivo.inmueble.copropiedad.nombre}`}
+      />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/*
+        La tarjeta de paz y salvo va primero y siempre visible: es la
+        información que le evita al residente intentar reservar y chocarse con
+        un bloqueo que no entiende. Explica la razón y el camino de salida,
+        sin lenguaje de cobranza.
+      */}
+      <Tarjeta
+        className={`flex flex-col gap-2 p-4 sm:p-5 ${
+          cartera.aPazYSalvo ? "border-emerald-200" : "border-amber-300"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <span
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+              cartera.aPazYSalvo
+                ? "bg-emerald-50 text-emerald-600"
+                : "bg-amber-50 text-amber-600"
+            }`}
+          >
+            {cartera.aPazYSalvo ? (
+              <CheckCircle2 className="h-5 w-5" />
+            ) : (
+              <Wallet className="h-5 w-5" />
+            )}
+          </span>
+          <div className="min-w-0">
+            <p className="font-semibold text-zinc-900">
+              {cartera.aPazYSalvo
+                ? "Estás a paz y salvo"
+                : "Tienes cuotas vencidas"}
+            </p>
+            <p className="mt-1 text-sm text-zinc-600">
+              {cartera.aPazYSalvo
+                ? "Puedes reservar zonas comunes sin restricción. Solo se valida que el horario esté libre."
+                : "Mientras haya cuotas vencidas no puedes reservar zonas comunes: es la regla del reglamento de la copropiedad. En cuanto la administración registre el pago, la reserva se habilita sola."}
+            </p>
+            {!cartera.aPazYSalvo ? (
+              <p className="mt-2 text-sm text-zinc-600">
+                Si ya pagaste o tienes un acuerdo con la administración,{" "}
+                <Link
+                  href="/portal/pqrs"
+                  className="font-medium text-brand-700 hover:underline"
+                >
+                  radica una PQRS
+                </Link>{" "}
+                con el soporte y lo revisan.
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </Tarjeta>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         <StatCard
           etiqueta="Saldo pendiente"
-          valor={formatearMoneda(saldoPendiente)}
-          tono={saldoPendiente.greaterThan(0) ? "alerta" : "positivo"}
+          valor={formatearMoneda(cartera.saldoTotal)}
+          detalle={
+            cartera.saldoTotal > 0
+              ? "Incluye recargos de mora si aplican"
+              : "Sin saldo pendiente"
+          }
+          tono={cartera.saldoTotal > 0 ? "alerta" : "positivo"}
+          icono={Wallet}
         />
         <StatCard
-          etiqueta="PQRS abiertas"
+          etiqueta="PQRS sin cerrar"
           valor={String(pqrsAbiertas)}
           tono={pqrsAbiertas > 0 ? "alerta" : "positivo"}
+          icono={MessagesSquare}
         />
-        <StatCard etiqueta="Próximas reservas" valor={String(proximasReservas)} />
+        <StatCard
+          etiqueta="Próximas reservas"
+          valor={String(proximasReservas)}
+          icono={CalendarClock}
+        />
       </div>
     </div>
   );

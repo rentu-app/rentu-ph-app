@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getAdministradorActual } from "@/lib/session";
+import { getContextoAdministrador } from "@/lib/session";
 import { generarEmbeddings } from "@/lib/ai/embeddings";
 import { trocearTexto } from "@/lib/ai/chunking";
 import { indexarDocumentoSchema } from "@/lib/validations/documentos";
@@ -23,7 +23,6 @@ export async function indexarDocumento(
   formData: FormData
 ): Promise<EstadoAccionDocumento> {
   const validado = indexarDocumentoSchema.safeParse({
-    copropiedadId: formData.get("copropiedadId"),
     tipo: formData.get("tipo"),
     titulo: formData.get("titulo"),
     contenido: formData.get("contenido"),
@@ -37,28 +36,19 @@ export async function indexarDocumento(
     };
   }
 
-  const { copropiedadId, tipo, titulo, contenido } = validado.data;
+  const { tipo, titulo, contenido } = validado.data;
 
   try {
-    const administrador = await getAdministradorActual();
-
-    const copropiedad = await prisma.copropiedad.findFirst({
-      where: {
-        id: copropiedadId,
-        deletedAt: null,
-        administradores: {
-          some: { usuarioId: administrador.id, deletedAt: null },
-        },
-      },
-      select: { id: true },
-    });
+    const { administrador, copropiedad } = await getContextoAdministrador();
 
     if (!copropiedad) {
       return {
         status: "error",
-        message: "La copropiedad no existe o no tienes acceso a ella.",
+        message: "No tienes una copropiedad asignada todavía.",
       };
     }
+
+    const copropiedadId = copropiedad.id;
 
     const fragmentos = trocearTexto(contenido);
     if (fragmentos.length === 0) {
@@ -82,7 +72,7 @@ export async function indexarDocumento(
       }
     });
 
-    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/documentos");
 
     return {
       status: "success",

@@ -1,8 +1,8 @@
 import type { ReservaConDetalle } from "@/lib/data/reservas";
 import { EstadoReservaBadge } from "@/components/reservas/estado-reserva-badge";
 import { GestionarReservaForm } from "@/components/reservas/gestionar-reserva-form";
+import { EstadoVacio } from "@/components/ui/primitivos";
 import { formatearFechaLarga, formatearHora } from "@/lib/formatters";
-import { StaggerList, StaggerListItem } from "@/components/ui/motion";
 
 function agruparPorDia(reservas: ReservaConDetalle[]) {
   const grupos = new Map<string, ReservaConDetalle[]>();
@@ -18,9 +18,10 @@ function agruparPorDia(reservas: ReservaConDetalle[]) {
 export function AgendaReservas({ reservas }: { reservas: ReservaConDetalle[] }) {
   if (reservas.length === 0) {
     return (
-      <p className="text-sm text-zinc-500">
-        No hay reservas que coincidan con este filtro.
-      </p>
+      <EstadoVacio
+        titulo="No hay reservas con este filtro"
+        descripcion="Los residentes radican sus reservas desde el portal. Una unidad con cuotas vencidas no puede radicar hasta ponerse a paz y salvo."
+      />
     );
   }
 
@@ -30,26 +31,27 @@ export function AgendaReservas({ reservas }: { reservas: ReservaConDetalle[] }) 
     <div className="flex flex-col gap-6">
       {dias.map(([clave, reservasDelDia]) => (
         <div key={clave} className="flex flex-col gap-3">
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          <h3 className="text-sm font-semibold text-zinc-900">
             {formatearFechaLarga(reservasDelDia[0].fechaInicio)}
           </h3>
-          <StaggerList className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-3">
             {reservasDelDia.map((reserva) => (
-              <StaggerListItem
+              <li
                 key={reserva.id}
-                className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:justify-between dark:border-zinc-800 dark:bg-zinc-900"
+                className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
               >
-                <div>
-                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                    {formatearHora(reserva.fechaInicio)}–{formatearHora(reserva.fechaFin)} ·{" "}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-zinc-900">
+                    {formatearHora(reserva.fechaInicio)}–
+                    {formatearHora(reserva.fechaFin)} ·{" "}
                     {reserva.zonaComun.nombre}
                   </p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    {reserva.zonaComun.copropiedad.nombre} · {reserva.inmueble.identificador} ·
-                    solicitado por {reserva.solicitadaPor.nombre}
+                  <p className="text-xs text-zinc-500">
+                    {reserva.inmueble.identificador} ({reserva.inmueble.torre}) ·
+                    solicitó {reserva.solicitadaPor.nombre}
                   </p>
                   {reserva.observaciones ? (
-                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    <p className="mt-1 text-xs text-zinc-500">
                       &ldquo;{reserva.observaciones}&rdquo;
                     </p>
                   ) : null}
@@ -57,11 +59,14 @@ export function AgendaReservas({ reservas }: { reservas: ReservaConDetalle[] }) 
 
                 <div className="flex flex-col items-start gap-2 sm:items-end">
                   <EstadoReservaBadge estado={reserva.estado} />
-                  <GestionarReservaForm reservaId={reserva.id} estadoActual={reserva.estado} />
+                  <GestionarReservaForm
+                    reservaId={reserva.id}
+                    estadoActual={reserva.estado}
+                  />
                 </div>
-              </StaggerListItem>
+              </li>
             ))}
-          </StaggerList>
+          </ul>
         </div>
       ))}
     </div>

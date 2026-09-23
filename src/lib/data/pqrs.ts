@@ -2,17 +2,19 @@ import { cache } from "react";
 import { EstadoPQRS } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
-export const getPqrsDeAdministrador = cache(
-  async (administradorId: string, estado?: EstadoPQRS) => {
+/**
+ * PQRS de UNA copropiedad. El `copropiedadId` lo resuelve siempre el
+ * servidor (`getCopropiedadActiva`) a partir de la sesión del
+ * administrador, nunca llega del cliente.
+ */
+export const getPqrsDeCopropiedad = cache(
+  async (copropiedadId: string, estado?: EstadoPQRS) => {
     return prisma.pqrs.findMany({
+    relationLoadStrategy: "join",
       where: {
         deletedAt: null,
         ...(estado ? { estado } : {}),
-        inmueble: {
-          copropiedad: {
-            administradores: { some: { usuarioId: administradorId, deletedAt: null } },
-          },
-        },
+        inmueble: { copropiedadId, deletedAt: null },
       },
       orderBy: { createdAt: "desc" },
       select: {
@@ -27,24 +29,28 @@ export const getPqrsDeAdministrador = cache(
         respondidoEn: true,
         fechaCierre: true,
         createdAt: true,
-        inmueble: {
-          select: {
-            identificador: true,
-            copropiedad: { select: { nombre: true } },
-          },
-        },
+        inmueble: { select: { identificador: true, torre: true } },
         radicadoPor: { select: { nombre: true } },
         dirigidoA: { select: { nombre: true } },
+        ordenesServicio: {
+          where: { deletedAt: null },
+          select: {
+            id: true,
+            estado: true,
+            prestador: { select: { nombre: true } },
+          },
+        },
       },
     });
   }
 );
 
-export type PqrsConDetalle = Awaited<ReturnType<typeof getPqrsDeAdministrador>>[number];
+export type PqrsConDetalle = Awaited<ReturnType<typeof getPqrsDeCopropiedad>>[number];
 
 /** PQRS propias del residente: las que él mismo radicó y las que el Administrador dirigió hacia él. */
 export const getPqrsDeResidente = cache(async (usuarioId: string, inmuebleId: string) => {
   return prisma.pqrs.findMany({
+    relationLoadStrategy: "join",
     where: {
       deletedAt: null,
       inmuebleId,
@@ -71,16 +77,12 @@ export const getPqrsDeResidente = cache(async (usuarioId: string, inmuebleId: st
 export type PqrsDeResidente = Awaited<ReturnType<typeof getPqrsDeResidente>>[number];
 
 /** Conteo de PQRS por estado, para las tarjetas de KPI y las pestañas de filtro. */
-export const getResumenPqrs = cache(async (administradorId: string) => {
+export const getResumenPqrs = cache(async (copropiedadId: string) => {
   const filas = await prisma.pqrs.groupBy({
     by: ["estado"],
     where: {
       deletedAt: null,
-      inmueble: {
-        copropiedad: {
-          administradores: { some: { usuarioId: administradorId, deletedAt: null } },
-        },
-      },
+      inmueble: { copropiedadId, deletedAt: null },
     },
     _count: { _all: true },
   });
@@ -99,41 +101,31 @@ export const getResumenPqrs = cache(async (administradorId: string) => {
 });
 
 /**
- * Estructura anidada (copropiedad → inmuebles → residentes activos) para el
- * formulario de radicar PQRS: permite selects en cascada 100% en el cliente,
- * sin round-trips adicionales al servidor.
+ * Unidades con sus residentes activos, para los selects en cascada del
+ * formulario de radicar PQRS (unidad → residente al que va dirigida). Al
+ * haber una sola copropiedad, ya no hay un nivel de anidamiento extra.
  */
-export const getCopropiedadesConInmueblesParaPqrs = cache(
-  async (administradorId: string) => {
-    return prisma.copropiedad.findMany({
-      where: {
-        deletedAt: null,
-        administradores: { some: { usuarioId: administradorId, deletedAt: null } },
-      },
-      orderBy: { nombre: "asc" },
-      select: {
-        id: true,
-        nombre: true,
-        inmuebles: {
-          where: { deletedAt: null },
-          orderBy: { identificador: "asc" },
-          select: {
-            id: true,
-            identificador: true,
-            residentes: {
-              where: { activo: true, deletedAt: null },
-              select: {
-                usuarioId: true,
-                usuario: { select: { nombre: true } },
-              },
-            },
-          },
+export const getUnidadesConResidentes = cache(async (copropiedadId: string) => {
+  return prisma.inmueble.findMany({
+    relationLoadStrategy: "join",
+    where: { copropiedadId, deletedAt: null },
+    orderBy: [{ torre: "asc" }, { identificador: "asc" }],
+    select: {
+      id: true,
+      identificador: true,
+      torre: true,
+      residentes: {
+        where: { activo: true, deletedAt: null },
+        select: {
+          usuarioId: true,
+          rol: true,
+          usuario: { select: { nombre: true } },
         },
       },
-    });
-  }
-);
+    },
+  });
+});
 
-export type CopropiedadParaPqrs = Awaited<
-  ReturnType<typeof getCopropiedadesConInmueblesParaPqrs>
+export type UnidadConResidentes = Awaited<
+  ReturnType<typeof getUnidadesConResidentes>
 >[number];

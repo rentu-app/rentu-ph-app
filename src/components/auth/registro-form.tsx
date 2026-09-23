@@ -1,23 +1,16 @@
 "use client";
 
 import { useActionState, useId } from "react";
-import { useFormStatus } from "react-dom";
 import { registrarAdministrador } from "@/lib/actions/auth";
 import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
+import { BotonSubmit } from "@/components/ui/boton";
+import { CLASES_CONTROL, Campo, MensajeAccion } from "@/components/ui/formulario";
 
-function BotonCrearCuenta() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="flex min-h-11 w-full items-center justify-center rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-600/20 transition-all hover:scale-[1.02] hover:bg-brand-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:bg-brand-500 dark:hover:bg-brand-400"
-    >
-      {pending ? "Creando cuenta…" : "Crear cuenta"}
-    </button>
-  );
-}
-
+/**
+ * Registro autogestionado de un administrador: crea su cuenta y, en el mismo
+ * paso, la copropiedad que va a gestionar. Rentu opera sobre una sola
+ * copropiedad por administrador, así que se pide acá y no después.
+ */
 export function RegistroForm() {
   const [estado, accion] = useActionState(registrarAdministrador, ESTADO_INICIAL_ACCION);
 
@@ -32,61 +25,55 @@ export function RegistroForm() {
   return (
     <form action={accion} className="flex flex-col gap-5">
       <div className="flex flex-col gap-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
           Tu cuenta
         </p>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1">
-            <label htmlFor={idNombre} className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-              Nombre completo
-            </label>
+          <Campo
+            etiqueta="Nombre completo"
+            htmlFor={idNombre}
+            error={estado.errores?.nombre?.[0]}
+          >
             <input
               id={idNombre}
               name="nombre"
               type="text"
               required
-              className="min-h-11 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+              autoComplete="name"
+              className={CLASES_CONTROL}
             />
-            {estado.errores?.nombre?.[0] ? (
-              <p className="text-xs text-red-600">{estado.errores.nombre[0]}</p>
-            ) : null}
-          </div>
+          </Campo>
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor={idTelefono} className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-              Teléfono (opcional)
-            </label>
+          <Campo etiqueta="Teléfono (opcional)" htmlFor={idTelefono}>
             <input
               id={idTelefono}
               name="telefono"
-              type="text"
-              className="min-h-11 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              className={CLASES_CONTROL}
             />
-          </div>
+          </Campo>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor={idEmail} className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            Correo
-          </label>
+        <Campo etiqueta="Correo" htmlFor={idEmail} error={estado.errores?.email?.[0]}>
           <input
             id={idEmail}
             name="email"
             type="email"
             required
             autoComplete="email"
-            className="min-h-11 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+            className={CLASES_CONTROL}
           />
-          {estado.errores?.email?.[0] ? (
-            <p className="text-xs text-red-600">{estado.errores.email[0]}</p>
-          ) : null}
-        </div>
+        </Campo>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor={idPassword} className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            Contraseña
-          </label>
+        <Campo
+          etiqueta="Contraseña"
+          htmlFor={idPassword}
+          error={estado.errores?.password?.[0]}
+          ayuda="Mínimo 8 caracteres."
+        >
           <input
             id={idPassword}
             name="password"
@@ -94,97 +81,74 @@ export function RegistroForm() {
             required
             autoComplete="new-password"
             minLength={8}
-            placeholder="Mínimo 8 caracteres"
-            className="min-h-11 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+            className={CLASES_CONTROL}
           />
-          {estado.errores?.password?.[0] ? (
-            <p className="text-xs text-red-600">{estado.errores.password[0]}</p>
-          ) : null}
-        </div>
+        </Campo>
       </div>
 
-      <div className="flex flex-col gap-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+      <div className="flex flex-col gap-4 border-t border-zinc-100 pt-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
             Tu copropiedad
           </p>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Quedas como su único administrador — luego puedes invitar residentes y
-            agregar inmuebles desde el portal.
+          <p className="mt-1 text-xs text-zinc-500">
+            Quedas como su administrador. Después puedes cargar las unidades
+            desde un CSV e invitar a los residentes.
           </p>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label
-            htmlFor={idCopropiedadNombre}
-            className="text-xs font-medium text-zinc-500 dark:text-zinc-400"
-          >
-            Nombre de la copropiedad
-          </label>
+        <Campo
+          etiqueta="Nombre de la copropiedad"
+          htmlFor={idCopropiedadNombre}
+          error={estado.errores?.copropiedadNombre?.[0]}
+        >
           <input
             id={idCopropiedadNombre}
             name="copropiedadNombre"
             type="text"
             required
             placeholder="ej. Conjunto Residencial Los Robles"
-            className="min-h-11 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+            className={CLASES_CONTROL}
           />
-          {estado.errores?.copropiedadNombre?.[0] ? (
-            <p className="text-xs text-red-600">{estado.errores.copropiedadNombre[0]}</p>
-          ) : null}
-        </div>
+        </Campo>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor={idCopropiedadDireccion}
-              className="text-xs font-medium text-zinc-500 dark:text-zinc-400"
-            >
-              Dirección
-            </label>
+          <Campo
+            etiqueta="Dirección"
+            htmlFor={idCopropiedadDireccion}
+            error={estado.errores?.copropiedadDireccion?.[0]}
+          >
             <input
               id={idCopropiedadDireccion}
               name="copropiedadDireccion"
               type="text"
               required
-              className="min-h-11 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+              className={CLASES_CONTROL}
             />
-            {estado.errores?.copropiedadDireccion?.[0] ? (
-              <p className="text-xs text-red-600">{estado.errores.copropiedadDireccion[0]}</p>
-            ) : null}
-          </div>
+          </Campo>
 
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor={idCopropiedadCiudad}
-              className="text-xs font-medium text-zinc-500 dark:text-zinc-400"
-            >
-              Ciudad
-            </label>
+          <Campo
+            etiqueta="Ciudad"
+            htmlFor={idCopropiedadCiudad}
+            error={estado.errores?.copropiedadCiudad?.[0]}
+          >
             <input
               id={idCopropiedadCiudad}
               name="copropiedadCiudad"
               type="text"
               required
               defaultValue="Bogotá D.C."
-              className="min-h-11 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950"
+              className={CLASES_CONTROL}
             />
-            {estado.errores?.copropiedadCiudad?.[0] ? (
-              <p className="text-xs text-red-600">{estado.errores.copropiedadCiudad[0]}</p>
-            ) : null}
-          </div>
+          </Campo>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <BotonCrearCuenta />
-        {estado.status === "error" ? (
-          <p className="text-sm text-red-600">{estado.message}</p>
-        ) : null}
-        {estado.status === "success" ? (
-          <p className="text-sm text-emerald-600">{estado.message}</p>
-        ) : null}
-      </div>
+      <MensajeAccion estado={estado} />
+
+      <BotonSubmit pendiente="Creando cuenta…" className="w-full">
+        Crear cuenta
+      </BotonSubmit>
     </form>
   );
 }

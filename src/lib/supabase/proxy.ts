@@ -33,16 +33,26 @@ export async function actualizarSesion(request: NextRequest) {
     }
   );
 
+  const rutaProtegida = PREFIJOS_PROTEGIDOS.some((prefijo) =>
+    request.nextUrl.pathname.startsWith(prefijo)
+  );
+  const esLogin = request.nextUrl.pathname === "/login";
+
+  // En rutas públicas (landing, registro, assets) no hace falta saber quién es
+  // el visitante: `getUser()` es una llamada de red a Supabase Auth (~150 ms
+  // medidos) y pagarla en cada request que no la necesita solo hace la app más
+  // lenta. El refresco del token se hace igual cuando entra a un área
+  // protegida o a /login.
+  if (!rutaProtegida && !esLogin) {
+    return response;
+  }
+
   // `getUser()` (no `getSession()`) revalida el JWT contra Supabase Auth en
   // cada llamada — más lento que leer la cookie, pero es la única forma
   // segura de confiar en la sesión en código de servidor.
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const rutaProtegida = PREFIJOS_PROTEGIDOS.some((prefijo) =>
-    request.nextUrl.pathname.startsWith(prefijo)
-  );
 
   if (!user && rutaProtegida) {
     const url = request.nextUrl.clone();
@@ -51,7 +61,7 @@ export async function actualizarSesion(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user?.email && request.nextUrl.pathname === "/login") {
+  if (user?.email && esLogin) {
     // Puntual (solo en esta rama, no en cada request): decide a cuál área
     // manda a alguien que ya tiene sesión pero visita /login de nuevo.
     const usuario = await prisma.usuario.findFirst({

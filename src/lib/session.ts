@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { RolUsuario } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCopropiedadActiva } from "@/lib/data/copropiedad";
 
 export const COOKIE_INMUEBLE_ACTIVO = "rentu_inmueble_activo";
 
@@ -52,6 +53,20 @@ export const getAdministradorActual = cache(async () => {
 });
 
 /**
+ * Contexto de trabajo del administrador: su usuario + la copropiedad activa.
+ *
+ * Es el único punto donde las Server Actions resuelven "sobre qué
+ * copropiedad estoy operando". Nunca se acepta un `copropiedadId` que venga
+ * del formulario: si el cliente lo mandara, un administrador podría escribir
+ * sobre un conjunto que no administra.
+ */
+export async function getContextoAdministrador() {
+  const administrador = await getAdministradorActual();
+  const copropiedad = await getCopropiedadActiva(administrador.id);
+  return { administrador, copropiedad };
+}
+
+/**
  * Sesión de un residente (PROPIETARIO/INQUILINO): además del `Usuario`,
  * resuelve sus vínculos activos a inmuebles (`UsuarioInmueble`) y cuál de
  * ellos está "activo" ahora mismo — relevante solo si tiene más de uno —
@@ -68,6 +83,7 @@ export const getResidenteActual = cache(async () => {
   }
 
   const vinculos = await prisma.usuarioInmueble.findMany({
+    relationLoadStrategy: "join",
     where: { usuarioId: usuario.id, activo: true, deletedAt: null },
     orderBy: { fechaInicio: "asc" },
     select: {

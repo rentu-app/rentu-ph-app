@@ -1,16 +1,13 @@
 import { cache } from "react";
 import { EstadoCuenta, EstadoReserva } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { calcularSaldoPendiente } from "@/lib/data/cartera";
 
-export const getZonasComunesDeAdministrador = cache(async (administradorId: string) => {
-  return prisma.zonaComun.findMany({
-    where: {
-      deletedAt: null,
-      copropiedad: {
-        administradores: { some: { usuarioId: administradorId, deletedAt: null } },
-      },
-    },
-    orderBy: [{ copropiedad: { nombre: "asc" } }, { nombre: "asc" }],
+/** Zonas comunes de la copropiedad, con su conteo de reservas vigentes. */
+export const getZonasComunes = cache(async (copropiedadId: string) => {
+  const zonas = await prisma.zonaComun.findMany({
+    where: { copropiedadId, deletedAt: null },
+    orderBy: { nombre: "asc" },
     select: {
       id: true,
       nombre: true,
@@ -18,7 +15,6 @@ export const getZonasComunesDeAdministrador = cache(async (administradorId: stri
       aforo: true,
       costo: true,
       activa: true,
-      copropiedad: { select: { nombre: true } },
       _count: {
         select: {
           reservas: {
@@ -28,23 +24,20 @@ export const getZonasComunesDeAdministrador = cache(async (administradorId: stri
       },
     },
   });
+
+  return zonas.map((zona) => ({ ...zona, costo: Number(zona.costo) }));
 });
 
-export type ZonaComunResumen = Awaited<
-  ReturnType<typeof getZonasComunesDeAdministrador>
->[number];
+export type ZonaComunResumen = Awaited<ReturnType<typeof getZonasComunes>>[number];
 
-export const getReservasDeAdministrador = cache(
-  async (administradorId: string, estado?: EstadoReserva) => {
+export const getReservasDeCopropiedad = cache(
+  async (copropiedadId: string, estado?: EstadoReserva) => {
     return prisma.reserva.findMany({
+    relationLoadStrategy: "join",
       where: {
         deletedAt: null,
         ...(estado ? { estado } : {}),
-        zonaComun: {
-          copropiedad: {
-            administradores: { some: { usuarioId: administradorId, deletedAt: null } },
-          },
-        },
+        zonaComun: { copropiedadId },
       },
       orderBy: { fechaInicio: "asc" },
       select: {
@@ -54,10 +47,8 @@ export const getReservasDeAdministrador = cache(
         estado: true,
         observaciones: true,
         createdAt: true,
-        zonaComun: {
-          select: { nombre: true, copropiedad: { select: { nombre: true } } },
-        },
-        inmueble: { select: { identificador: true } },
+        zonaComun: { select: { nombre: true } },
+        inmueble: { select: { id: true, identificador: true, torre: true } },
         solicitadaPor: { select: { nombre: true } },
       },
     });
@@ -65,15 +56,14 @@ export const getReservasDeAdministrador = cache(
 );
 
 export type ReservaConDetalle = Awaited<
-  ReturnType<typeof getReservasDeAdministrador>
+  ReturnType<typeof getReservasDeCopropiedad>
 >[number];
 
 /**
  * Zonas comunes activas de la copropiedad del residente, para elegir al
  * radicar una reserva. `costo` se convierte a `number` porque un `Decimal`
  * de Prisma no es un objeto plano y Next.js no permite pasarlo de un Server
- * Component a un Client Component (este resultado alimenta
- * `<CrearReservaForm>` en `src/app/portal/reservas/page.tsx`).
+ * Component a un Client Component.
  */
 export const getZonasComunesDeCopropiedad = cache(async (copropiedadId: string) => {
   const zonas = await prisma.zonaComun.findMany({
@@ -92,6 +82,7 @@ export type ZonaComunParaResidente = Awaited<
 /** Reservas propias de un inmueble, para la vista "Mis reservas" del residente. */
 export const getReservasDeResidente = cache(async (inmuebleId: string) => {
   return prisma.reserva.findMany({
+    relationLoadStrategy: "join",
     where: { inmuebleId, deletedAt: null },
     orderBy: { fechaInicio: "desc" },
     select: {
@@ -109,22 +100,32 @@ export const getReservasDeResidente = cache(async (inmuebleId: string) => {
 export type ReservaDeResidente = Awaited<ReturnType<typeof getReservasDeResidente>>[number];
 
 /**
- * true si el inmueble tiene alguna cuenta de cobro VENCIDA o EN_MORA (no
- * está a paz y salvo). Ambos estados bloquean reservas — no solo la mora
- * ya escalada.
+ * true si el inmueble tiene alguna cuenta de cobro VENCIDA o EN_MORA con
+ * saldo (no está a paz y salvo). Ambos estados bloquean reservas — no solo
+ * la mora ya escalada. Es la única fuente de verdad de esa regla: la usan
+ * `crearReservaResidente`, `actualizarEstadoReserva` y la tarjeta de estado
+ * del portal, para que el bloqueo y lo que ve el residente nunca se
+ * contradigan.
  */
 export async function inmuebleNoEstaAPazYSalvo(inmuebleId: string): Promise<boolean> {
-  const cuentaPendienteCritica = await prisma.cuentaDeCobro.findFirst({
+  const cuentasCriticas = await prisma.cuentaDeCobro.findMany({
+    relationLoadStrategy: "join",
     where: {
       inmuebleId,
       deletedAt: null,
       estado: { in: [EstadoCuenta.VENCIDA, EstadoCuenta.EN_MORA] },
     },
-    select: { id: true },
+    select: {
+      totalAPagar: true,
+      montoPagado: true,
+      recargosMora: { where: { deletedAt: null }, select: { monto: true } },
+    },
   });
-  return cuentaPendienteCritica !== null;
-}
 
+  return cuentasCriticas.some((cuenta) =>
+    calcularSaldoPendiente(cuenta).greaterThan(0)
+  );
+}
 /** true si ya existe una reserva PENDIENTE/CONFIRMADA que se cruza en el tiempo. */
 export async function existeCruceDeHorario(params: {
   zonaComunId: string;

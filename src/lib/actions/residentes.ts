@@ -112,6 +112,7 @@ export async function invitarResidente(
     }
 
     revalidatePath("/dashboard/residentes");
+    revalidatePath("/dashboard/cartera");
 
     return {
       status: "success",

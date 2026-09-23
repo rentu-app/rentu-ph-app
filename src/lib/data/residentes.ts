@@ -1,21 +1,17 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
-/** Residentes activos vinculados a inmuebles de las copropiedades del administrador. */
-export const getResidentesDeAdministrador = cache(async (administradorId: string) => {
+/** Residentes activos vinculados a unidades de la copropiedad. */
+export const getResidentesDeCopropiedad = cache(async (copropiedadId: string) => {
   return prisma.usuarioInmueble.findMany({
+    relationLoadStrategy: "join",
     where: {
       deletedAt: null,
       activo: true,
-      inmueble: {
-        deletedAt: null,
-        copropiedad: {
-          administradores: { some: { usuarioId: administradorId, deletedAt: null } },
-        },
-      },
+      inmueble: { copropiedadId, deletedAt: null },
     },
     orderBy: [
-      { inmueble: { copropiedad: { nombre: "asc" } } },
+      { inmueble: { torre: "asc" } },
       { inmueble: { identificador: "asc" } },
     ],
     select: {
@@ -23,43 +19,54 @@ export const getResidentesDeAdministrador = cache(async (administradorId: string
       rol: true,
       fechaInicio: true,
       usuario: { select: { id: true, nombre: true, email: true, telefono: true } },
-      inmueble: {
-        select: {
-          identificador: true,
-          copropiedad: { select: { nombre: true } },
-        },
-      },
+      inmueble: { select: { id: true, identificador: true, torre: true } },
     },
   });
 });
 
-export type ResidenteConDetalle = Awaited<ReturnType<typeof getResidentesDeAdministrador>>[number];
+export type ResidenteConDetalle = Awaited<
+  ReturnType<typeof getResidentesDeCopropiedad>
+>[number];
 
 /**
- * Estructura anidada (copropiedad → inmuebles) para el formulario de
- * invitar residente: permite un select en cascada 100% en el cliente.
+ * Vínculos históricos ya revocados (offboarding). Se listan aparte porque la
+ * fila nunca se borra — la trazabilidad de quién vivió en cada unidad es una
+ * exigencia de la Ley 675 y es información que el consejo pide.
  */
-export const getCopropiedadesConInmueblesParaInvitar = cache(
-  async (administradorId: string) => {
-    return prisma.copropiedad.findMany({
-      where: {
-        deletedAt: null,
-        administradores: { some: { usuarioId: administradorId, deletedAt: null } },
-      },
-      orderBy: { nombre: "asc" },
-      select: {
-        id: true,
-        nombre: true,
-        inmuebles: {
-          where: { deletedAt: null },
-          orderBy: { identificador: "asc" },
-          select: { id: true, identificador: true },
-        },
-      },
-    });
-  }
-);
+export const getResidentesHistoricos = cache(async (copropiedadId: string) => {
+  return prisma.usuarioInmueble.findMany({
+    relationLoadStrategy: "join",
+    where: {
+      deletedAt: null,
+      activo: false,
+      inmueble: { copropiedadId, deletedAt: null },
+    },
+    orderBy: { fechaFin: "desc" },
+    take: 20,
+    select: {
+      id: true,
+      rol: true,
+      fechaInicio: true,
+      fechaFin: true,
+      usuario: { select: { nombre: true, email: true } },
+      inmueble: { select: { identificador: true, torre: true } },
+    },
+  });
+});
 
-export type CopropiedadParaInvitar = Awaited<
-  ReturnType<typeof getCopropiedadesConInmueblesParaInvitar>
+export type ResidenteHistorico = Awaited<
+  ReturnType<typeof getResidentesHistoricos>
+>[number];
+
+/** Unidades de la copropiedad para el select del formulario de invitación. */
+export const getUnidadesParaInvitar = cache(async (copropiedadId: string) => {
+  return prisma.inmueble.findMany({
+    where: { copropiedadId, deletedAt: null },
+    orderBy: [{ torre: "asc" }, { identificador: "asc" }],
+    select: { id: true, identificador: true, torre: true },
+  });
+});
+
+export type UnidadParaInvitar = Awaited<
+  ReturnType<typeof getUnidadesParaInvitar>
 >[number];

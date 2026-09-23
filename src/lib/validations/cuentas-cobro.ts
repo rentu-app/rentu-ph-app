@@ -6,8 +6,11 @@ import {
 
 const PERIODO_REGEX = /^\d{4}-(0[1-9]|1[0-2])$/;
 
+/**
+ * La copropiedad ya no viaja en el formulario: la resuelve el servidor desde
+ * la sesión del administrador (ver `getContextoAdministrador`).
+ */
 export const generarCuentasDeCobroSchema = z.object({
-  copropiedadId: z.uuid("Copropiedad inválida"),
   periodo: z
     .string()
     .trim()

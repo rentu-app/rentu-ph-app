@@ -1,5 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 
+/**
+ * Tarjeta de indicador. Sin `transition-all`, sin `hover:-translate-y` y sin
+ * `group-hover:scale`: en una parrilla de 4–6 tarjetas esos efectos hacían
+ * que el navegador recalculara layout y repintara sombras en cada
+ * movimiento del cursor, y en móvil (donde el hover ni existe) solo
+ * aportaban peso.
+ */
 export function StatCard({
   etiqueta,
   valor,
@@ -10,47 +17,45 @@ export function StatCard({
   etiqueta: string;
   valor: string;
   detalle?: string;
-  tono?: "neutral" | "alerta" | "positivo";
+  tono?: "neutral" | "alerta" | "positivo" | "marca";
   icono?: LucideIcon;
 }) {
   const colorDetalle =
     tono === "alerta"
-      ? "text-red-600 dark:text-red-400"
+      ? "text-red-600"
       : tono === "positivo"
-        ? "text-emerald-600 dark:text-emerald-400"
-        : "text-zinc-500 dark:text-zinc-400";
+        ? "text-emerald-600"
+        : "text-zinc-500";
 
   const estilosIcono =
     tono === "alerta"
-      ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400"
+      ? "bg-red-50 text-red-600"
       : tono === "positivo"
-        ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
-        : "bg-accent-50 text-accent-600 dark:bg-accent-950/30 dark:text-accent-400";
+        ? "bg-emerald-50 text-emerald-600"
+        : tono === "marca"
+          ? "bg-brand-50 text-brand-600"
+          : "bg-accent-50 text-accent-600";
 
   return (
-    <div className="group rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-brand-800">
+    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          {etiqueta}
-        </p>
+        <p className="text-sm font-medium text-zinc-500">{etiqueta}</p>
         {Icono ? (
           <span
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-110 ${estilosIcono}`}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${estilosIcono}`}
           >
             <Icono className="h-[18px] w-[18px]" />
           </span>
         ) : null}
       </div>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+      {/* `break-words` + `tabular-nums`: una cifra en pesos colombianos
+          ("$12.480.000") no cabe en 160 px sin partirse, y las cifras
+          alineadas en columnas necesitan ancho de dígito fijo. */}
+      <p className="mt-2 text-xl font-semibold tracking-tight tabular-nums text-zinc-900 break-words sm:text-2xl">
         {valor}
       </p>
       {detalle ? (
-        <p className={`mt-1 flex items-center gap-1.5 text-sm ${colorDetalle}`}>
-          {tono === "alerta" ? (
-            <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-red-500" />
-          ) : null}
-          {detalle}
-        </p>
+        <p className={`mt-1 text-sm ${colorDetalle}`}>{detalle}</p>
       ) : null}
     </div>
   );

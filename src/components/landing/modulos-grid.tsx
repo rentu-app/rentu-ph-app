@@ -1,4 +1,4 @@
-import { Bot, CalendarClock, MessagesSquare, Wallet } from "lucide-react";
+import { Bot, CalendarClock, HardHat, MessagesSquare, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const MODULOS: {
@@ -9,54 +9,62 @@ const MODULOS: {
   destacado?: boolean;
 }[] = [
   {
-    id: "copiloto",
-    icono: Bot,
-    titulo: "Copiloto Administrativo RAG",
+    icono: Wallet,
+    titulo: "Cartera por torre y apartamento",
     descripcion:
-      "Consultas del reglamento, manual de convivencia y actas en tiempo real, con respuestas basadas únicamente en los documentos de tu copropiedad.",
+      "Cartera total, mora, recaudo del mes y antigüedad de la deuda. Entra a una unidad y ves su estado de cuenta, sus pagos, sus residentes y todo lo que ya se hizo para cobrarle.",
     destacado: true,
   },
   {
     icono: MessagesSquare,
-    titulo: "Módulo de PQRS",
+    titulo: "Gestión de cobro con bitácora",
     descripcion:
-      "Radicación secuencial (PQRS-2026-XXXX), filtros por estado y trazabilidad completa de cada respuesta del administrador.",
-  },
-  {
-    icono: Wallet,
-    titulo: "Cuentas de Cobro y Cartera",
-    descripcion:
-      "Genera cuentas por coeficiente, registra abonos parciales o totales y monitorea la cartera en mora en tiempo real.",
+      "Cada llamada, visita, acuerdo o aviso queda registrado con autor y fecha. La etapa de seguimiento (recordatorio, persuasivo, acuerdo, prejurídico) la mueves tú: nada escala solo.",
   },
   {
     icono: CalendarClock,
-    titulo: "Reservas de Zonas Comunes",
+    titulo: "Reservas con regla de paz y salvo",
     descripcion:
-      "Agenda de salón social, BBQ y canchas con bloqueo automático a inmuebles que no estén a paz y salvo.",
+      "Una unidad con cuotas vencidas no puede reservar zonas comunes, y el residente ve la razón explicada en su portal. Al registrar el pago se habilita, si el horario está libre.",
+  },
+  {
+    icono: HardHat,
+    titulo: "PQRS y prestadores externos",
+    descripcion:
+      "Radicación con número de radicado y respuesta trazable. Una solicitud de mantenimiento se puede convertir —de forma explícita— en una orden de servicio para seguridad, aseo, jardinería u obra.",
+  },
+  {
+    id: "copiloto",
+    icono: Bot,
+    titulo: "Copiloto sobre tus documentos",
+    descripcion:
+      "Pregúntale al reglamento, al manual de convivencia o a las actas en lenguaje natural. Responde solo con lo que está en los documentos indexados y lo dice cuando no encuentra la respuesta.",
   },
 ];
 
 export function ModulosGrid() {
   return (
-    <section id="modulos" className="bg-white py-20 sm:py-28">
-      <div className="mx-auto max-w-6xl px-6">
+    <section id="modulos" className="bg-white py-14 sm:py-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl">
-            Todo lo que necesita tu copropiedad, en un solo lugar
+          <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900 sm:text-3xl">
+            Todo gira alrededor de la cartera
           </h2>
-          <p className="mt-4 text-lg text-zinc-600">
-            Cuatro módulos que cubren el día a día de un Administrador de PH.
+          <p className="mt-3 text-base text-zinc-600 sm:text-lg">
+            Rentu no intenta ser un ERP contable. Resuelve la pregunta que un
+            administrador tiene todos los días: quién debe, desde cuándo y qué
+            sigue.
           </p>
         </div>
 
-        <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-6">
           {MODULOS.map((modulo) => (
             <div
               key={modulo.titulo}
               id={modulo.id}
-              className={`rounded-2xl border p-6 shadow-sm transition-shadow hover:shadow-md ${
+              className={`rounded-2xl border p-5 shadow-sm sm:p-6 ${
                 modulo.destacado
-                  ? "border-brand-200 bg-brand-50"
+                  ? "border-brand-200 bg-brand-50 sm:col-span-2"
                   : "border-zinc-200 bg-white"
               }`}
             >
@@ -69,7 +77,9 @@ export function ModulosGrid() {
               >
                 <modulo.icono className="h-5 w-5" />
               </span>
-              <h3 className="mt-4 text-lg font-bold text-zinc-900">{modulo.titulo}</h3>
+              <h3 className="mt-4 text-lg font-bold text-zinc-900">
+                {modulo.titulo}
+              </h3>
               <p className="mt-2 text-sm leading-relaxed text-zinc-600">
                 {modulo.descripcion}
               </p>
