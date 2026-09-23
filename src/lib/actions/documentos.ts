@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getContextoAdministrador } from "@/lib/session";
-import { generarEmbeddings } from "@/lib/ai/embeddings";
 import { trocearTexto } from "@/lib/ai/chunking";
 import { indexarDocumentoSchema } from "@/lib/validations/documentos";
 import type { EstadoAccionFormulario } from "@/lib/types/estado-accion";
@@ -56,6 +55,9 @@ export async function indexarDocumento(
     }
 
     // Trabajo de CPU (modelo local) fuera de la transacción de base de datos.
+    // Import dinámico: así las demás server actions de /dashboard/[section]
+    // no cargan `onnxruntime-node` (binario nativo) al evaluarse.
+    const { generarEmbeddings } = await import("@/lib/ai/embeddings");
     const vectores = await generarEmbeddings(fragmentos);
 
     await prisma.$transaction(async (tx) => {
