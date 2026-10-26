@@ -39,7 +39,7 @@ export function SiteHeader() {
             href="/registro"
             className="inline-flex min-h-11 items-center rounded-md border border-zinc-300 px-4 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50"
           >
-            Registrarse
+            Registrar mi copropiedad
           </Link>
           <Link
             href="/login"

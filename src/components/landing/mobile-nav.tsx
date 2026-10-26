@@ -47,7 +47,7 @@ export function MobileNav() {
               onClick={() => setAbierto(false)}
               className="mt-2 flex min-h-11 items-center justify-center rounded-md border border-zinc-300 px-4 font-semibold text-zinc-700"
             >
-              Registrarse
+              Registrar mi copropiedad
             </Link>
             <Link
               href="/login"
