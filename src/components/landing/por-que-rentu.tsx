@@ -7,7 +7,7 @@ const DIFERENCIADORES: { icono: LucideIcon; titulo: string; descripcion: string 
     icono: Eye,
     titulo: "Una sola versión de la verdad",
     descripcion:
-      "El saldo de una unidad se calcula siempre igual: total facturado más recargos, menos pagos registrados. Lo mismo ve la administración en el tablero y el residente en su portal.",
+      "El saldo de una unidad se calcula siempre igual: total facturado más recargos, menos pagos registrados. Sin hojas de cálculo que no cuadran.",
   },
   {
     icono: ListChecks,

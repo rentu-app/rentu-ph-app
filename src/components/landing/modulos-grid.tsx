@@ -25,7 +25,7 @@ const MODULOS: {
     icono: CalendarClock,
     titulo: "Reservas con regla de paz y salvo",
     descripcion:
-      "Una unidad con cuotas vencidas no puede reservar zonas comunes, y el residente ve la razón explicada en su portal. Al registrar el pago se habilita, si el horario está libre.",
+      "Una unidad con cuotas vencidas no puede reservar zonas comunes. La regla se valida sola y te ahorras explicarla una por una.",
   },
   {
     icono: HardHat,
