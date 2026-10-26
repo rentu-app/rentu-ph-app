@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
+import { MarcaAuth } from "@/components/auth/marca-auth";
 import { DemoForm } from "@/components/auth/demo-form";
 
 export const metadata: Metadata = {
@@ -14,12 +15,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
   return (
     <div className="flex flex-1 items-center justify-center bg-zinc-50 px-4 dark:bg-zinc-950">
       <div className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mb-6 text-center">
-          <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Rentu</p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Inicia sesión como Administrador
-          </p>
-        </div>
+        <MarcaAuth descripcion="Inicia sesión como Administrador" />
         {process.env.DEMO_ADMIN_PASSWORD ? (
           <div className="mb-6 rounded-lg border border-accent-200 bg-accent-50 p-4 dark:border-zinc-700 dark:bg-zinc-800">
             <p className="mb-3 text-sm text-zinc-700 dark:text-zinc-300">
