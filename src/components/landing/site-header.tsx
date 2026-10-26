@@ -22,7 +22,7 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium text-zinc-600 md:flex">
+        <nav className="hidden items-center gap-6 whitespace-nowrap text-sm font-medium text-zinc-600 lg:flex">
           {ENLACES_NAV.map((enlace) => (
             <Link
               key={enlace.href}
@@ -34,7 +34,7 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 whitespace-nowrap lg:flex">
           <Link
             href="/registro"
             className="inline-flex min-h-11 items-center rounded-md border border-zinc-300 px-4 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50"

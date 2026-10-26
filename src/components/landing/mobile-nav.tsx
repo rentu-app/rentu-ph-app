@@ -11,14 +11,14 @@ import { ENLACES_NAV } from "@/components/landing/nav-links";
  * botón deja el header limpio. En el dashboard y el portal, en cambio, la
  * navegación es una fila scrolleable sin JavaScript.
  *
- * El corte es `md` (768px), no `sm`: a 640px el logo + 3 enlaces + 2 botones
- * quedaban apretados.
+ * El corte es `lg` (1024px): con "Registrar mi copropiedad" el logo + 3
+ * enlaces + 2 botones ya no caben en 768px sin partirse en dos líneas.
  */
 export function MobileNav() {
   const [abierto, setAbierto] = useState(false);
 
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       <button
         type="button"
         onClick={() => setAbierto((v) => !v)}
