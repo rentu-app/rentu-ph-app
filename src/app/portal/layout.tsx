@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Building2 } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 import { getResidenteActual } from "@/lib/session";
 import { PortalNav } from "@/components/portal/portal-nav";
 import { SeleccionarInmuebleForm } from "@/components/portal/seleccionar-inmueble-form";
@@ -13,9 +13,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         <div className="mx-auto flex max-w-4xl flex-col gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white">
-                <Building2 className="h-5 w-5" />
-              </span>
+              <Logo altura={36} className="shrink-0" />
               <div className="min-w-0">
                 <p className="text-sm font-semibold leading-tight text-zinc-900">
                   Mi portal

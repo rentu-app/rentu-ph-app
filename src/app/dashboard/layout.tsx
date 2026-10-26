@@ -1,4 +1,5 @@
-import { Building2, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { getContextoAdministrador } from "@/lib/session";
 
@@ -28,9 +29,7 @@ export default async function DashboardLayout({
       <header className="border-b border-zinc-200 bg-white pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white">
-              <Building2 className="h-5 w-5" />
-            </span>
+            <Logo altura={36} className="shrink-0" />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold leading-tight text-zinc-900">
                 {copropiedad?.nombre ?? "Rentu"}

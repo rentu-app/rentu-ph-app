@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2 } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 import { MobileNav } from "@/components/landing/mobile-nav";
 import { ENLACES_NAV } from "@/components/landing/nav-links";
 
@@ -14,9 +14,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white pt-[env(safe-area-inset-top)]">
       <div className="relative mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white">
-            <Building2 className="h-5 w-5" />
-          </span>
+          <Logo altura={36} className="shrink-0" />
           <span className="text-lg font-extrabold tracking-tight text-zinc-900 sm:text-xl">
             Rentu<span className="text-accent-500">PH</span>
           </span>
