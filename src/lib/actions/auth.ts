@@ -64,6 +64,38 @@ export async function iniciarSesion(
   redirect(destino);
 }
 
+const EMAIL_DEMO_ADMIN = "admin.demo@example.com";
+
+/**
+ * Entrada de un clic a la cuenta demo de administrador. La contraseña se lee
+ * de `DEMO_ADMIN_PASSWORD` en el servidor y nunca viaja al HTML: la cuenta
+ * demo comparte contraseña con otras cuentas sembradas, así que no se
+ * publica en la página.
+ */
+export async function entrarComoDemo(): Promise<EstadoAccionLogin> {
+  const password = process.env.DEMO_ADMIN_PASSWORD;
+  if (!password) {
+    return { status: "error", message: "La demo no está disponible en este momento." };
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: EMAIL_DEMO_ADMIN,
+      password,
+    });
+    if (error) {
+      console.error("entrarComoDemo", error.message);
+      return { status: "error", message: "No se pudo entrar a la demo. Intenta de nuevo." };
+    }
+  } catch (error) {
+    console.error("entrarComoDemo", error);
+    return { status: "error", message: "No se pudo entrar a la demo. Intenta de nuevo." };
+  }
+
+  redirect("/dashboard");
+}
+
 export type EstadoAccionRegistro = EstadoAccionFormulario;
 
 /**

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
+import { DemoForm } from "@/components/auth/demo-form";
 
 export const metadata: Metadata = {
   title: "Iniciar sesión · Rentu",
@@ -19,6 +20,14 @@ export default async function LoginPage(props: PageProps<"/login">) {
             Inicia sesión como Administrador
           </p>
         </div>
+        {process.env.DEMO_ADMIN_PASSWORD ? (
+          <div className="mb-6 rounded-lg border border-accent-200 bg-accent-50 p-4 dark:border-zinc-700 dark:bg-zinc-800">
+            <p className="mb-3 text-sm text-zinc-700 dark:text-zinc-300">
+              ¿Solo quieres evaluar? Entra a un conjunto ficticio con datos de ejemplo.
+            </p>
+            <DemoForm />
+          </div>
+        ) : null}
         <LoginForm next={next} />
         <p className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
           ¿No tienes cuenta?{" "}
