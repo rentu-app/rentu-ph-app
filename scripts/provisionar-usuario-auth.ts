@@ -1,7 +1,7 @@
 /**
  * Crea en Supabase Auth un usuario por cada `Usuario` sembrado en Prisma que
  * todavía no exista ahí, con la misma contraseña demo del seed
- * (`prisma/seed.ts` → PASSWORD_DEMO). Idempotente: si el email ya existe en
+ * (`SEED_DEFAULT_PASSWORD`). Idempotente: si el email ya existe en
  * Supabase Auth, se omite.
  *
  * Uso:  pnpm provision:auth
@@ -11,7 +11,10 @@
 import { createSupabaseAdminClient } from "../src/lib/supabase/admin";
 import { prisma } from "../src/lib/prisma";
 
-const PASSWORD_DEMO = "Rentu2026*";
+const PASSWORD_DEMO = process.env.SEED_DEFAULT_PASSWORD;
+if (!PASSWORD_DEMO) {
+  throw new Error("Define SEED_DEFAULT_PASSWORD en .env (ver .env.example).");
+}
 
 async function main() {
   const supabaseAdmin = createSupabaseAdminClient();

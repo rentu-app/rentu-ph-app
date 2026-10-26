@@ -53,7 +53,15 @@ function hashPassword(password: string): string {
   return `${salt}:${hash}`;
 }
 
-const PASSWORD_DEMO = hashPassword("Rentu2026*");
+function passwordPorDefecto(): string {
+  const valor = process.env.SEED_DEFAULT_PASSWORD;
+  if (!valor) {
+    throw new Error("Define SEED_DEFAULT_PASSWORD en .env (ver .env.example).");
+  }
+  return valor;
+}
+
+const PASSWORD_DEMO = hashPassword(passwordPorDefecto());
 
 const NIT_DEMO = "901742358-1";
 const CUOTA_BASE = 385_000; // cuota de administración mensual de referencia
@@ -980,7 +988,7 @@ async function main() {
     console.log(`   Unidades con cartera previa (no re-sembradas): ${unidadesOmitidas}`);
   }
   console.log(`   Administradores: ${EMAILS_ADMIN_DEMO.join(", ")}`);
-  console.log("   Contraseña demo (Prisma y Supabase Auth): Rentu2026*");
+  console.log("   Contraseña demo (Prisma y Supabase Auth): la de SEED_DEFAULT_PASSWORD");
   console.log("   Siguiente paso sugerido: pnpm provision:auth (crea los logins en Supabase Auth).");
 }
 

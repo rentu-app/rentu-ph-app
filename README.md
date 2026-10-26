@@ -42,7 +42,7 @@ torres, 24 apartamentos, 6 periodos de cuentas de cobro con comportamiento de
 pago variado, 14 residentes, 4 zonas comunes, 5 PQRS, 5 prestadores y órdenes de
 servicio.
 
-Contraseña de todas las cuentas demo: `Rentu2026*`
+Contraseña de todas las cuentas demo: la que definas en `SEED_DEFAULT_PASSWORD` (`.env`, ver `.env.example`).
 
 | Rol | Correo | Para ver |
 | --- | --- | --- |

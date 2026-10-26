@@ -8,7 +8,7 @@
  *   BASE=http://localhost:3000 pnpm verify:rutas
  *
  * Requiere que el seed y `pnpm provision:auth` se hayan ejecutado (usa las
- * cuentas demo con la contraseña `Rentu2026*`).
+ * cuentas demo con la contraseña de `SEED_DEFAULT_PASSWORD`).
  *
  * Un caso se espera "en rojo" a propósito y se rotula como tal: un residente
  * que entra a /dashboard debe ser redirigido a /portal.
@@ -22,7 +22,7 @@ import { prisma } from "../src/lib/prisma";
 const BASE = process.env.BASE ?? "http://localhost:3000";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const PASSWORD = process.env.PASSWORD_DEMO ?? "Rentu2026*";
+const PASSWORD = process.env.SEED_DEFAULT_PASSWORD ?? process.env.PASSWORD_DEMO ?? "";
 
 if (!SUPABASE_URL || !ANON) {
   throw new Error(
