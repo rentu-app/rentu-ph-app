@@ -12,7 +12,7 @@ const MODULOS: {
     icono: Wallet,
     titulo: "Cartera por torre y apartamento",
     descripcion:
-      "Cartera total, mora, recaudo del mes y antigüedad de la deuda. Entra a una unidad y ves su estado de cuenta, sus pagos, sus residentes y todo lo que ya se hizo para cobrarle.",
+      "Cartera total, mora, recaudo del mes y antigüedad de la deuda. Entra a una unidad y ves su estado de cuenta, sus pagos, sus ocupantes y todo lo que ya se hizo para cobrarle.",
     destacado: true,
   },
   {

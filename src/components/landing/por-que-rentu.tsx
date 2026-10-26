@@ -19,7 +19,7 @@ const DIFERENCIADORES: { icono: LucideIcon; titulo: string; descripcion: string 
     icono: Users,
     titulo: "Reglas que se aplican solas",
     descripcion:
-      "El bloqueo de reservas por cartera vencida se valida en el servidor cada vez que se radica y cada vez que se confirma. No depende de que alguien lo recuerde.",
+      "El bloqueo de reservas por cartera vencida se valida en el servidor cada vez que se solicita una reserva y cada vez que la confirmas. No depende de que alguien lo recuerde.",
   },
 ];
 
