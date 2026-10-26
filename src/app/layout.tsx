@@ -12,10 +12,28 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const TITULO = "Rentu PH · Gestión inteligente de Propiedad Horizontal";
+const DESCRIPCION =
+  "La plataforma de gestión para administradores de Propiedad Horizontal: cartera, PQRS, reservas y un Copiloto Administrativo con IA.";
+
 export const metadata: Metadata = {
-  title: "Rentu PH · Gestión inteligente de Propiedad Horizontal",
-  description:
-    "La plataforma de gestión para Propiedad Horizontal con cartera, PQRS, reservas y un Copiloto Administrativo con IA.",
+  metadataBase: new URL("https://rentu-ph-app-rho.vercel.app"),
+  title: TITULO,
+  description: DESCRIPCION,
+  openGraph: {
+    title: TITULO,
+    description: DESCRIPCION,
+    url: "/",
+    siteName: "Rentu PH",
+    locale: "es_CO",
+    type: "website",
+    // La imagen la inyecta app/opengraph-image.tsx.
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITULO,
+    description: DESCRIPCION,
+  },
 };
 
 /**
@@ -34,7 +52,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="es"
+      lang="es-CO"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">{children}</body>
