@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 /**
  * PQRS de UNA copropiedad. El `copropiedadId` lo resuelve siempre el
- * servidor (`getCopropiedadActiva`) a partir de la sesión del
+ * servidor (`getContextoAdministrador`) a partir de la sesión del
  * administrador, nunca llega del cliente.
  */
 export const getPqrsDeCopropiedad = cache(

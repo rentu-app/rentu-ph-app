@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Building2,
   CalendarClock,
   FileStack,
   HardHat,
@@ -18,6 +19,7 @@ import { cerrarSesion } from "@/lib/actions/auth";
 const ENLACES: { href: string; etiqueta: string; corta: string; icono: LucideIcon }[] = [
   { href: "/dashboard", etiqueta: "Resumen", corta: "Resumen", icono: LayoutDashboard },
   { href: "/dashboard/cartera", etiqueta: "Cartera", corta: "Cartera", icono: Wallet },
+  { href: "/dashboard/unidades", etiqueta: "Unidades", corta: "Unidades", icono: Building2 },
   { href: "/dashboard/reservas", etiqueta: "Reservas", corta: "Reservas", icono: CalendarClock },
   { href: "/dashboard/pqrs", etiqueta: "PQRS", corta: "PQRS", icono: MessagesSquare },
   { href: "/dashboard/residentes", etiqueta: "Residentes", corta: "Residentes", icono: Users },
@@ -33,7 +35,7 @@ const ENLACES: { href: string; etiqueta: string; corta: string; icono: LucideIco
  * `useState`) y la píldora activa se animaba con `layoutId` de
  * framer-motion. Eso significaba: JS para abrir/cerrar, un panel absoluto
  * que tapaba el contenido, y una animación de layout en cada navegación.
- * Una fila scrolleable no necesita estado, deja las 7 secciones a un toque
+ * Una fila scrolleable no necesita estado, deja las secciones a un toque
  * de distancia y no anima nada.
  */
 export function DashboardNav() {

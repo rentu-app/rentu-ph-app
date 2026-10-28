@@ -4,9 +4,10 @@ import { redirect } from "next/navigation";
 import { RolUsuario } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getCopropiedadActiva } from "@/lib/data/copropiedad";
+import { resolverCopropiedadActiva } from "@/lib/data/copropiedad";
 
 export const COOKIE_INMUEBLE_ACTIVO = "rentu_inmueble_activo";
+export const COOKIE_COPROPIEDAD_ACTIVA = "rentu_copropiedad_activa";
 
 /**
  * Identidad = Supabase Auth (email/password); autorización = el registro de
@@ -58,12 +59,25 @@ export const getAdministradorActual = cache(async () => {
  * Es el único punto donde las Server Actions resuelven "sobre qué
  * copropiedad estoy operando". Nunca se acepta un `copropiedadId` que venga
  * del formulario: si el cliente lo mandara, un administrador podría escribir
- * sobre un conjunto que no administra.
+ * sobre un conjunto que no administra. La activa sale de la cookie
+ * `COOKIE_COPROPIEDAD_ACTIVA`, pero esa cookie solo se usa como pista: se
+ * valida contra los vínculos del administrador en cada request. Si tiene 2 o
+ * más copropiedades y ninguna elegida, se manda a `/seleccionar-copropiedad`.
  */
 export async function getContextoAdministrador() {
   const administrador = await getAdministradorActual();
-  const copropiedad = await getCopropiedadActiva(administrador.id);
-  return { administrador, copropiedad };
+  const cookieStore = await cookies();
+  const { copropiedad, copropiedades, requiereSeleccion } =
+    await resolverCopropiedadActiva(
+      administrador.id,
+      cookieStore.get(COOKIE_COPROPIEDAD_ACTIVA)?.value
+    );
+
+  if (requiereSeleccion) {
+    redirect("/seleccionar-copropiedad");
+  }
+
+  return { administrador, copropiedad, copropiedades };
 }
 
 /**

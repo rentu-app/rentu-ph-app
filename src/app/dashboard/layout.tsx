@@ -1,5 +1,5 @@
-import { MapPin } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
+import { SelectorCopropiedad } from "@/components/dashboard/selector-copropiedad";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { getContextoAdministrador } from "@/lib/session";
 
@@ -15,14 +15,14 @@ import { getContextoAdministrador } from "@/lib/session";
  *   - Se eliminaron dos capas decorativas (`blur-3xl` + gradiente de 420 px
  *     de alto) que se repintaban con el scroll sin aportar información.
  *
- * El nombre de la copropiedad vive en el header porque toda la app opera
- * sobre una sola: es el contexto permanente, no un dato que se elige en cada
- * pantalla.
+ * La copropiedad activa vive en el header (con el selector para cambiarla)
+ * porque toda la app opera sobre una sola a la vez: es el contexto
+ * permanente, no un dato que se elige en cada pantalla.
  */
 export default async function DashboardLayout({
   children,
 }: LayoutProps<"/dashboard">) {
-  const { copropiedad } = await getContextoAdministrador();
+  const { copropiedad, copropiedades } = await getContextoAdministrador();
 
   return (
     <div className="min-h-full bg-zinc-50">
@@ -30,21 +30,11 @@ export default async function DashboardLayout({
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2.5">
             <Logo altura={36} className="shrink-0" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold leading-tight text-zinc-900">
-                {copropiedad?.nombre ?? "Rentu"}
-              </p>
-              {copropiedad ? (
-                <p className="flex items-center gap-1 truncate text-xs leading-tight text-zinc-500">
-                  <MapPin className="h-3 w-3 shrink-0" />
-                  {copropiedad.direccion} · {copropiedad.ciudad} ·{" "}
-                  {copropiedad.totalUnidades} unidades
-                </p>
-              ) : (
-                <p className="text-xs leading-tight text-zinc-500">
-                  Tablero operativo de PH
-                </p>
-              )}
+            <div className="min-w-0 flex-1">
+              <SelectorCopropiedad
+                copropiedades={copropiedades}
+                activaId={copropiedad?.id}
+              />
             </div>
           </div>
           <DashboardNav />

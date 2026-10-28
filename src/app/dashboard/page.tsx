@@ -22,7 +22,6 @@ import {
 } from "@/components/cartera/resumen-cartera";
 import { UnidadesPrioritarias } from "@/components/cartera/unidades-tabla";
 import { GenerarCuentasForm } from "@/components/dashboard/generar-cuentas-form";
-import { ImportarUnidadesForm } from "@/components/cartera/importar-unidades-form";
 import { FormPanel } from "@/components/ui/form-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -77,15 +76,13 @@ export default async function DashboardPage() {
             >
               <GenerarCuentasForm totalUnidades={copropiedad.totalUnidades} />
             </FormPanel>
-            <FormPanel
-              triggerLabel="Importar unidades"
-              title="Importar unidades desde CSV"
-              description="Carga el padrón de apartamentos con su torre y coeficiente. Primero se valida y se muestra la vista previa; nada se guarda hasta que confirmes."
-              icon={<FileUp className="h-4 w-4" />}
-              variant="accent"
+            <Link
+              href="/dashboard/unidades"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent-500 px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-accent-400 sm:w-auto"
             >
-              <ImportarUnidadesForm />
-            </FormPanel>
+              <FileUp className="h-4 w-4" />
+              Agregar unidades
+            </Link>
           </div>
         }
       />

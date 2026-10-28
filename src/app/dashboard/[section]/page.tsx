@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import {
   CalendarPlus,
+  Download,
   FileStack,
   HardHat,
   MessageSquarePlus,
@@ -36,7 +37,14 @@ import {
   getPqrsEscalables,
   getPrestadores,
 } from "@/lib/data/prestadores";
+import { getUnidadesDeCopropiedad } from "@/lib/data/unidades";
 import { getDocumentosPHDeCopropiedad } from "@/lib/data/documentos-ph";
+import { UnidadForm } from "@/components/unidades/unidad-form";
+import { AccionesUnidad } from "@/components/unidades/acciones-unidad";
+import { SumaCoeficientes } from "@/components/unidades/suma-coeficientes";
+import { ImportarUnidadesForm } from "@/components/cartera/importar-unidades-form";
+import { ETIQUETAS_ESTADO_INMUEBLE } from "@/lib/validations/unidades";
+import { FILA_CSV_ESPERADA } from "@/lib/validations/cartera";
 import { KpisCartera } from "@/components/cartera/resumen-cartera";
 import { UnidadesTabla } from "@/components/cartera/unidades-tabla";
 import { UnidadDetalle } from "@/components/cartera/unidad-detalle";
@@ -67,12 +75,17 @@ import {
   EncabezadoPagina,
   EstadoVacio,
   FilaFiltros,
+  Etiqueta,
   FiltroPill,
   Seccion,
+  TablaScroll,
+  Tarjeta,
+  Td,
+  Th,
 } from "@/components/ui/primitivos";
 
 /**
- * Las seis subpáginas del dashboard viven en una sola ruta dinámica en vez de
+ * Las subpáginas del dashboard viven en una sola ruta dinámica en vez de
  * seis carpetas: cada carpeta propia sería su propia Serverless Function en
  * Vercel, y el plan Hobby limita a 12 por deployment. Acá además la sección
  * `documentos` es la que carga el binario de onnxruntime-node (embeddings del
@@ -80,6 +93,7 @@ import {
  */
 const SECCIONES = [
   "cartera",
+  "unidades",
   "reservas",
   "pqrs",
   "residentes",
@@ -94,6 +108,7 @@ function esSeccionValida(valor: string): valor is Seccion {
 
 const TITULOS: Record<Seccion, string> = {
   cartera: "Cartera · Rentu",
+  unidades: "Unidades · Rentu",
   reservas: "Reservas · Rentu",
   pqrs: "PQRS · Rentu",
   residentes: "Residentes · Rentu",
@@ -137,6 +152,8 @@ export default async function DashboardSeccionPage(
   switch (section) {
     case "cartera":
       return <SeccionCartera copropiedad={copropiedad} searchParams={searchParams} />;
+    case "unidades":
+      return <SeccionUnidades copropiedad={copropiedad} />;
     case "reservas":
       return <SeccionReservas copropiedad={copropiedad} searchParams={searchParams} />;
     case "pqrs":
@@ -284,6 +301,103 @@ async function ListaUnidades({
         }
       />
     </Seccion>
+  );
+}
+
+// ---------------------------------- UNIDADES --------------------------------
+
+const PLANTILLA_CSV = `${FILA_CSV_ESPERADA}\nApto 101,Torre 1,0.04167,72.50\nApto 102,Torre 1,0.04167,72.50\nApto 201,Torre 2,0.04167,68.00\n`;
+const HREF_PLANTILLA = `data:text/csv;charset=utf-8,${encodeURIComponent(PLANTILLA_CSV)}`;
+
+/**
+ * Alta de unidades por dos caminos que escriben lo mismo: CSV (con plantilla
+ * descargable) o una por una. Debajo, el padrón con la suma de coeficientes.
+ */
+async function SeccionUnidades({ copropiedad }: { copropiedad: CopropiedadActiva }) {
+  const { unidades, sumaCoeficientes } = await getUnidadesDeCopropiedad(copropiedad.id);
+
+  return (
+    <div className="flex flex-col gap-8">
+      <EncabezadoPagina
+        titulo="Unidades"
+        descripcion={`Padrón de apartamentos y casas de ${copropiedad.nombre}.`}
+      />
+
+      <SumaCoeficientes suma={sumaCoeficientes} totalUnidades={unidades.length} />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Tarjeta className="flex flex-col gap-4 p-5">
+          <div>
+            <h2 className="text-base font-semibold text-zinc-900">Subir CSV</h2>
+            <p className="mt-0.5 text-sm text-zinc-500">
+              Ideal si ya tienes el padrón en Excel. Primero se valida y se muestra una vista
+              previa; nada se guarda hasta que confirmes.
+            </p>
+            <a
+              href={HREF_PLANTILLA}
+              download="plantilla-unidades.csv"
+              className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-brand-700 hover:text-brand-800 sm:min-h-9"
+            >
+              <Download className="h-4 w-4" />
+              Descargar plantilla CSV
+            </a>
+          </div>
+          <ImportarUnidadesForm />
+        </Tarjeta>
+
+        <Tarjeta className="flex flex-col gap-4 p-5">
+          <div>
+            <h2 className="text-base font-semibold text-zinc-900">Agregar manualmente</h2>
+            <p className="mt-0.5 text-sm text-zinc-500">
+              Una por una. Al guardar, el formulario queda listo para la siguiente.
+            </p>
+          </div>
+          <UnidadForm modo="crear" />
+        </Tarjeta>
+      </div>
+
+      <Seccion titulo={`${unidades.length} unidad(es) registradas`}>
+        {unidades.length === 0 ? (
+          <EstadoVacio
+            titulo="Todavía no hay unidades"
+            descripcion="Sube un CSV o agrégalas manualmente con los formularios de arriba."
+          />
+        ) : (
+          <TablaScroll>
+            <table className="w-full min-w-[40rem] border-collapse">
+              <thead className="border-b border-zinc-200 bg-zinc-50">
+                <tr>
+                  <Th>Unidad</Th>
+                  <Th>Torre</Th>
+                  <Th className="text-right">Coeficiente</Th>
+                  <Th className="text-right">Área m²</Th>
+                  <Th>Estado</Th>
+                  <Th />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 bg-white">
+                {unidades.map((unidad) => (
+                  <tr key={unidad.id}>
+                    <Td className="font-medium text-zinc-900">{unidad.identificador}</Td>
+                    <Td>{unidad.torre}</Td>
+                    <Td className="text-right tabular-nums">{unidad.coeficiente}</Td>
+                    <Td className="text-right tabular-nums">{unidad.areaM2 || "—"}</Td>
+                    <Td>
+                      <Etiqueta tono={unidad.estado === "OCUPADO" ? "exito" : "neutro"}>
+                        {ETIQUETAS_ESTADO_INMUEBLE[unidad.estado]}
+                      </Etiqueta>
+                    </Td>
+                    <Td>
+                      <AccionesUnidad unidad={unidad} />
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TablaScroll>
+        )}
+      </Seccion>
+    </div>
   );
 }
 

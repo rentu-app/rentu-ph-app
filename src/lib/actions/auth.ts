@@ -1,16 +1,27 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { RolUsuario } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { COOKIE_COPROPIEDAD_ACTIVA } from "@/lib/session";
 import { hashPassword } from "@/lib/password";
 import { registrarAdministradorSchema } from "@/lib/validations/registro";
 import type { EstadoAccionFormulario } from "@/lib/types/estado-accion";
 
 export type EstadoAccionLogin = EstadoAccionFormulario;
+
+/**
+ * La copropiedad activa no sobrevive a un cambio de sesión: cada inicio de
+ * sesión (o registro) parte de cero, así una cookie dejada por otra persona
+ * en el mismo navegador nunca decide qué copropiedad se abre.
+ */
+async function olvidarCopropiedadActiva() {
+  (await cookies()).delete(COOKIE_COPROPIEDAD_ACTIVA);
+}
 
 const loginSchema = z.object({
   email: z.email("Ingresa un correo válido"),
@@ -45,9 +56,23 @@ export async function iniciarSesion(
 
     const usuario = await prisma.usuario.findFirst({
       where: { email: validado.data.email, deletedAt: null },
-      select: { rol: true },
+      select: { id: true, rol: true },
     });
     destino = usuario?.rol === RolUsuario.ADMINISTRADOR ? "/dashboard" : "/portal";
+
+    // Con 2 o más copropiedades el administrador elige cuál abrir; con 1
+    // entra directo (el dashboard la resuelve solo).
+    if (usuario?.rol === RolUsuario.ADMINISTRADOR) {
+      await olvidarCopropiedadActiva();
+      const totalCopropiedades = await prisma.administradorCopropiedad.count({
+        where: {
+          usuarioId: usuario.id,
+          deletedAt: null,
+          copropiedad: { deletedAt: null },
+        },
+      });
+      if (totalCopropiedades >= 2) destino = "/seleccionar-copropiedad";
+    }
 
     const destinoParam = formData.get("next");
     if (typeof destinoParam === "string" && destinoParam.startsWith("/")) {
@@ -88,6 +113,7 @@ export async function entrarComoDemo(): Promise<EstadoAccionLogin> {
       console.error("entrarComoDemo", error.message);
       return { status: "error", message: "No se pudo entrar a la demo. Intenta de nuevo." };
     }
+    await olvidarCopropiedadActiva();
   } catch (error) {
     console.error("entrarComoDemo", error);
     return { status: "error", message: "No se pudo entrar a la demo. Intenta de nuevo." };
@@ -193,6 +219,7 @@ export async function registrarAdministrador(
       });
     });
 
+    await olvidarCopropiedadActiva();
     const supabase = await createSupabaseServerClient();
     const { error: errorLogin } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -215,6 +242,7 @@ export async function cerrarSesion() {
   try {
     const supabase = await createSupabaseServerClient();
     await supabase.auth.signOut();
+    await olvidarCopropiedadActiva();
   } catch (error) {
     console.error("cerrarSesion", error);
   }

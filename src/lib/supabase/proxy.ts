@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { RolUsuario } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
-const PREFIJOS_PROTEGIDOS = ["/dashboard", "/portal"];
+const PREFIJOS_PROTEGIDOS = ["/dashboard", "/portal", "/seleccionar-copropiedad"];
 
 /**
  * Refresca la sesión de Supabase en cada request y protege las rutas del

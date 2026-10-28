@@ -9,7 +9,7 @@
  * Es de solo lectura: no escribe nada en la base.
  */
 import { prisma } from "../src/lib/prisma";
-import { getCopropiedadActiva } from "../src/lib/data/copropiedad";
+import { resolverCopropiedadActiva } from "../src/lib/data/copropiedad";
 import {
   getCarteraPorTorre,
   getDetalleUnidad,
@@ -29,7 +29,7 @@ async function main() {
     select: { id: true },
   });
 
-  const copropiedad = await getCopropiedadActiva(admin.id);
+  const { copropiedad } = await resolverCopropiedadActiva(admin.id, undefined);
   if (!copropiedad) throw new Error("El administrador demo no tiene copropiedad activa.");
 
   console.log(`\n=== ${copropiedad.nombre} ===`);
