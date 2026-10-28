@@ -20,6 +20,8 @@ import {
 } from "../src/lib/data/cartera";
 import { existeCruceDeHorario, inmuebleNoEstaAPazYSalvo } from "../src/lib/data/reservas";
 import { filaUnidadSchema } from "../src/lib/validations/cartera";
+import { existsSync, readFileSync } from "node:fs";
+import { normalizarContenidoCsv } from "../src/lib/csv-normalizar";
 import { superaLimiteTotal } from "../src/lib/coeficientes";
 import { procesarCsvUnidades } from "../src/lib/csv-unidades";
 
@@ -206,6 +208,65 @@ async function main() {
     forzado.formato === "porcentaje" && forzado.filasValidas[0].coeficiente === "0.00658",
     `${forzado.formato}, cada unidad → ${forzado.filasValidas[0].coeficientePorcentaje} % (esperado porcentaje, 0.658 %)`
   );
+
+  console.log(`\n--- Confirmación del CSV: texto en pantalla vs texto validado ---`);
+  // Simula el ciclo de la UI: el servidor normaliza, valida y devuelve el texto
+  // normalizado (`contenidoValidado`); el cliente compara contra la MISMA
+  // normalización de lo que hay en pantalla. Confirmable = coinciden y no hay bloqueo.
+  const simular = (nombre: string, enPantalla: string, esperadasValidas: number) => {
+    const ecoServidor = normalizarContenidoCsv(enPantalla);
+    const resultado = procesarCsvUnidades(ecoServidor);
+    if ("error" in resultado) {
+      comprobar(nombre, false, resultado.error);
+      return;
+    }
+    const sumaFracciones = resultado.filasValidas.reduce(
+      (acc, fila) => acc.plus(fila.coeficiente),
+      new Prisma.Decimal(0)
+    );
+    const confirmable =
+      normalizarContenidoCsv(enPantalla) === ecoServidor &&
+      !superaLimiteTotal(sumaFracciones) &&
+      resultado.filasValidas.length === esperadasValidas;
+    comprobar(
+      nombre,
+      confirmable,
+      `${resultado.filasValidas.length} válidas, ${resultado.formato}, suma ${sumaFracciones
+        .mul(100)
+        .toFixed(3)} % → ${confirmable ? "confirmable" : "NO confirmable"}`
+    );
+  };
+
+  const base = "identificador,coeficiente\nApto C1,50\nApto C2,50";
+  simular("CRLF + salto final", base.replace(/\n/g, "\r\n") + "\r\n", 2);
+  simular("BOM + CRLF + salto final", "\uFEFF" + base.replace(/\n/g, "\r\n") + "\r\n", 2);
+  simular("solo \\r (Mac antiguo)", base.replace(/\n/g, "\r") + "\r", 2);
+  simular("LF sin salto final", base, 2);
+  simular("espacios/saltos al final", base + "  \n\n  ", 2);
+
+  // Archivo real de prueba (si está junto al repo): subido con el input de
+  // archivo (File.text(): con salto final) y pegado en el textarea (el
+  // navegador normaliza \r\n a \n y el usuario suele pegar sin el salto final).
+  const rutaArchivo = new URL("../../unidades_prueba_formato_actual.csv", import.meta.url);
+  if (existsSync(rutaArchivo)) {
+    const archivo = readFileSync(rutaArchivo, "utf8").replace(/^\uFEFF/, "");
+    simular("archivo real subido (20 filas)", archivo, 20);
+    simular("archivo real pegado (20 filas)", archivo.trimEnd(), 20);
+
+    // Cambiar el selector recalcula con el formato elegido; el texto no cambia.
+    for (const formato of ["porcentaje", "fraccion"] as const) {
+      const r = procesarCsvUnidades(normalizarContenidoCsv(archivo), formato);
+      if ("error" in r) throw new Error(r.error);
+      const total = r.filasValidas.reduce((acc, f) => acc.plus(f.coeficiente), new Prisma.Decimal(0));
+      console.log(
+        `  selector → ${formato.padEnd(10)} ${r.filasValidas.length} válidas, errores ${r.erroresFila.length}, suma ${total
+          .mul(100)
+          .toFixed(3)} %${superaLimiteTotal(total) ? " (BLOQUEADA)" : ""}`
+      );
+    }
+  } else {
+    console.log("  (archivo unidades_prueba_formato_actual.csv no encontrado: se omite)");
+  }
 
   const suma = await prisma.inmueble.aggregate({
     where: { copropiedadId: copropiedad.id, deletedAt: null },

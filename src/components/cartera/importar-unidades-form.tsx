@@ -9,6 +9,7 @@ import {
   type FormEvent,
 } from "react";
 import { importarUnidadesCsv } from "@/lib/actions/cartera";
+import { normalizarContenidoCsv } from "@/lib/csv-normalizar";
 import { FILA_CSV_ESPERADA } from "@/lib/validations/cartera";
 import { ESTADO_INICIAL_IMPORTACION } from "@/lib/types/importacion";
 import { CLASES_CONTROL, CLASES_TEXTAREA, Campo, MensajeAccion } from "@/components/ui/formulario";
@@ -58,20 +59,25 @@ export function ImportarUnidadesForm() {
 
   // Tras una importación exitosa el campo se muestra vacío y se descarta la
   // vista previa; en cuanto el usuario escribe algo distinto vuelve a la normalidad.
-  const yaImportado = !!estado.confirmado && estado.contenidoValidado === contenido;
+  // Se compara el texto NORMALIZADO (misma función que usa el servidor): los
+  // saltos de línea \r\n o un salto final no cuentan como "cambio".
+  const contenidoNormalizado = normalizarContenidoCsv(contenido);
+  const coincideConValidado = estado.contenidoValidado === contenidoNormalizado;
+  const yaImportado = !!estado.confirmado && coincideConValidado;
   const contenidoVisible = yaImportado ? "" : contenido;
 
-  // Hay un resultado de validación vigente para el texto que se ve en pantalla.
-  const hayResultado =
-    !estado.confirmado && !!estado.formatoCoeficiente && estado.contenidoValidado === contenido;
+  // La vista previa y el selector se muestran siempre que exista un resultado;
+  // si el texto cambió desde la validación NO se esconden, solo se deshabilita
+  // "Confirmar" (ver `contenidoCambio`).
+  const hayResultado = !estado.confirmado && !!estado.formatoCoeficiente;
   const hayFilas = hayResultado && (estado.filasValidas?.length ?? 0) > 0;
   const formatoMostrado = formatoManual ?? estado.formatoCoeficiente ?? "porcentaje";
-  // Solo se puede confirmar lo que se revisó: mismo texto, mismo formato, y
-  // sin que la suma total de la copropiedad pase de 100.001 %.
-  const puedeConfirmar =
-    hayFilas &&
-    !estado.bloqueada &&
-    (formatoManual === null || formatoManual === estado.formatoCoeficiente);
+  const contenidoCambio = hayResultado && !coincideConValidado;
+  // Solo se confirma lo que se revisó: mismo texto, mismo formato, y sin que la
+  // suma total de la copropiedad pase de 100.001 %.
+  const formatoRevisado = formatoManual === null || formatoManual === estado.formatoCoeficiente;
+  const mostrarConfirmar = hayFilas && !estado.bloqueada;
+  const puedeConfirmar = mostrarConfirmar && !contenidoCambio && formatoRevisado;
 
   async function alElegirArchivo(evento: ChangeEvent<HTMLInputElement>) {
     const archivo = evento.target.files?.[0];
@@ -90,7 +96,7 @@ export function ImportarUnidadesForm() {
   function enviar(confirmar: boolean, formato: FormatoElegido | null) {
     const datos = new FormData();
     // Lo que el usuario ve: tras importar el campo se muestra vacío.
-    datos.set("contenido", contenidoVisible);
+    datos.set("contenido", normalizarContenidoCsv(contenidoVisible));
     datos.set("confirmar", confirmar ? "true" : "false");
     datos.set("formato", formato ?? "auto");
     startTransition(() => accion(datos));
@@ -225,6 +231,15 @@ export function ImportarUnidadesForm() {
         </div>
       ) : null}
 
+      {contenidoCambio ? (
+        <p
+          role="status"
+          className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20"
+        >
+          El contenido cambió desde la última validación. Valida de nuevo.
+        </p>
+      ) : null}
+
       <div className="flex flex-col gap-2 sm:flex-row">
         {/* Dos submits en el mismo formulario: `alEnviar` lee cuál se pulsó
             (`submitter.value`) y manda el contenido del estado con esa
@@ -238,11 +253,11 @@ export function ImportarUnidadesForm() {
           {pendiente ? "Procesando…" : "Validar sin guardar"}
         </button>
 
-        {puedeConfirmar ? (
+        {mostrarConfirmar ? (
           <button
             type="submit"
             value="true"
-            disabled={pendiente}
+            disabled={pendiente || !puedeConfirmar}
             className={`${BOTON} bg-brand-600 text-white hover:bg-brand-700`}
           >
             {pendiente ? "Importando…" : `Confirmar e importar ${estado.filasValidas?.length} fila(s)`}

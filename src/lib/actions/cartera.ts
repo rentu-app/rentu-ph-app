@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EtapaCobro, Prisma, TipoGestionCobro } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { normalizarContenidoCsv } from "@/lib/csv-normalizar";
 import { procesarCsvUnidades } from "@/lib/csv-unidades";
 import { superaLimiteTotal } from "@/lib/coeficientes";
 import { calcularEtapasReactivacion, operacionesReactivarUnidad } from "@/lib/unidades-escritura";
@@ -223,7 +224,7 @@ export async function importarUnidadesCsv(
   _prevState: ResultadoImportacion,
   formData: FormData
 ): Promise<ResultadoImportacion> {
-  const contenidoCrudo = String(formData.get("contenido") ?? "");
+  const contenidoCrudo = normalizarContenidoCsv(String(formData.get("contenido") ?? ""));
   const confirmar = formData.get("confirmar") === "true";
   const formatoPedido = formData.get("formato");
   const formatoForzado =
@@ -231,7 +232,7 @@ export async function importarUnidadesCsv(
 
   // Antes se perdía el contenido en silencio y la confirmación terminaba en 0
   // filas: ahora un contenido vacío es siempre un error explícito.
-  if (contenidoCrudo.trim().length === 0) {
+  if (contenidoCrudo.length === 0) {
     return {
       status: "error",
       message: confirmar
