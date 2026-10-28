@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   Building2,
   CalendarClock,
-  CircleHelp,
   FileStack,
   HardHat,
   LayoutDashboard,
@@ -16,7 +15,6 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cerrarSesion } from "@/lib/actions/auth";
-import { EVENTO_INICIAR_TOUR } from "@/components/dashboard/tour-guiado";
 
 const ENLACES: { href: string; etiqueta: string; corta: string; icono: LucideIcon }[] = [
   { href: "/dashboard", etiqueta: "Resumen", corta: "Resumen", icono: LayoutDashboard },
@@ -71,16 +69,7 @@ export function DashboardNav() {
         );
       })}
 
-      <button
-        type="button"
-        onClick={() => window.dispatchEvent(new Event(EVENTO_INICIAR_TOUR))}
-        className="ml-auto flex min-h-11 shrink-0 items-center gap-1.5 rounded-md px-3 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800"
-      >
-        <CircleHelp className="h-4 w-4 shrink-0" />
-        <span>Ver tutorial</span>
-      </button>
-
-      <form action={cerrarSesion} className="shrink-0 pl-1">
+      <form action={cerrarSesion} className="ml-auto shrink-0 pl-2">
         <button
           type="submit"
           className="flex min-h-11 items-center gap-1.5 rounded-md px-3 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800"

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeftRight, MapPin } from "lucide-react";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { esCuentaDemo } from "@/lib/demo";
+import { AyudaFlotante } from "@/components/dashboard/ayuda-flotante";
 import { TourGuiado } from "@/components/dashboard/tour-guiado";
 import { getContextoAdministrador, getTourVisto } from "@/lib/session";
 
@@ -66,8 +67,9 @@ export default async function DashboardLayout({
       </header>
 
       <TourGuiado autoLanzar={lanzarTour} />
+      <AyudaFlotante />
 
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(3rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-8">
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-8">
         {children}
       </main>
     </div>

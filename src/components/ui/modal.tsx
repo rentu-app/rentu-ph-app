@@ -48,7 +48,11 @@ export function Modal({
 
     contenedorRef.current?.focus();
 
+    // Otros elementos flotantes (botón de ayuda) se ocultan con este atributo.
+    document.body.setAttribute("data-modal-abierto", "");
+
     return () => {
+      document.body.removeAttribute("data-modal-abierto");
       document.removeEventListener("keydown", alPresionarTecla);
       document.body.style.overflow = overflowPrevio;
     };

@@ -201,3 +201,9 @@ body {
     animation: none !important;
   }
 }
+
+/* Botón de ayuda flotante: se oculta con un modal o el tour abiertos. */
+body[data-modal-abierto] .rentu-ayuda,
+body.driver-active .rentu-ayuda {
+  display: none;
+}
