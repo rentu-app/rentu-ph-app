@@ -98,11 +98,21 @@ export async function eliminarCuentaAdministrador(
     }),
   ]);
 
+  // La transacción ya se confirmó y NO se revierte. El borrado en Auth se
+  // reintenta 2 veces (a los 500 ms y a los 1500 ms); si igual falla, queda el
+  // log y el llamador avisa al usuario con `authEliminado: false`.
   let authEliminado = false;
   if (authUserId) {
-    const { error } = await createSupabaseAdminClient().auth.admin.deleteUser(authUserId);
-    if (error) console.error("eliminarCuentaAdministrador:deleteUser", error.message);
-    authEliminado = !error;
+    const esperas = [0, 500, 1500];
+    for (const espera of esperas) {
+      if (espera > 0) await new Promise((resolver) => setTimeout(resolver, espera));
+      const { error } = await createSupabaseAdminClient().auth.admin.deleteUser(authUserId);
+      if (!error) {
+        authEliminado = true;
+        break;
+      }
+      console.error(`eliminarCuentaAdministrador:deleteUser (espera ${espera} ms)`, error.message);
+    }
   }
 
   return {

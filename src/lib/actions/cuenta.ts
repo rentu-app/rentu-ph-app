@@ -19,6 +19,7 @@ export async function eliminarMiCuenta(
   formData: FormData
 ): Promise<EstadoAccionFormulario> {
   const confirmacion = z.string().safeParse(formData.get("email"));
+  let destino = "/?cuenta=eliminada";
 
   try {
     const administrador = await getAdministradorActual();
@@ -39,7 +40,9 @@ export async function eliminarMiCuenta(
       data: { user },
     } = await supabase.auth.getUser();
 
-    await eliminarCuentaAdministrador(administrador.id, user?.id ?? null);
+    const resultado = await eliminarCuentaAdministrador(administrador.id, user?.id ?? null);
+    // Auth no se pudo borrar tras los reintentos: el correo puede tardar en liberarse.
+    if (user && !resultado.authEliminado) destino = "/?cuenta=eliminada-parcial";
 
     try {
       await supabase.auth.signOut();
@@ -52,5 +55,5 @@ export async function eliminarMiCuenta(
     return { status: "error", message: "No se pudo eliminar la cuenta. Intenta de nuevo." };
   }
 
-  redirect("/?cuenta=eliminada");
+  redirect(destino);
 }
