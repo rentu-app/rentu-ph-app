@@ -9,6 +9,7 @@ import {
   HardHat,
   LayoutDashboard,
   LogOut,
+  Settings,
   MessagesSquare,
   Users,
   Wallet,
@@ -25,6 +26,7 @@ const ENLACES: { href: string; etiqueta: string; corta: string; icono: LucideIco
   { href: "/dashboard/residentes", etiqueta: "Residentes", corta: "Residentes", icono: Users },
   { href: "/dashboard/prestadores", etiqueta: "Prestadores", corta: "Prestadores", icono: HardHat },
   { href: "/dashboard/documentos", etiqueta: "Documentos", corta: "Docs", icono: FileStack },
+  { href: "/dashboard/configuracion", etiqueta: "Configuración", corta: "Ajustes", icono: Settings },
 ] as const;
 
 /**

@@ -14,6 +14,8 @@ import {
   EstadoPQRS,
   EstadoReserva,
 } from "@prisma/client";
+import { esCuentaDemo } from "@/lib/demo";
+import { EliminarCuenta } from "@/components/dashboard/eliminar-cuenta";
 import { getContextoAdministrador } from "@/lib/session";
 import type { CopropiedadActiva } from "@/lib/data/copropiedad";
 import {
@@ -100,6 +102,7 @@ const SECCIONES = [
   "residentes",
   "prestadores",
   "documentos",
+  "configuracion",
 ] as const;
 type Seccion = (typeof SECCIONES)[number];
 
@@ -115,6 +118,7 @@ const TITULOS: Record<Seccion, string> = {
   residentes: "Residentes · Rentu",
   prestadores: "Prestadores · Rentu",
   documentos: "Documentos y Copiloto · Rentu",
+  configuracion: "Configuración · Rentu",
 };
 
 export async function generateMetadata(
@@ -138,8 +142,33 @@ export default async function DashboardSeccionPage(
   const { section } = await props.params;
   if (!esSeccionValida(section)) notFound();
 
-  const { copropiedad } = await getContextoAdministrador();
+  const { administrador, copropiedad } = await getContextoAdministrador();
   const searchParams = await props.searchParams;
+
+  // Configuración es de la cuenta, no de una copropiedad: se muestra aunque no haya una activa.
+  if (section === "configuracion") {
+    return (
+      <div className="flex flex-col gap-8">
+        <EncabezadoPagina titulo="Configuración" descripcion="Tu cuenta de administrador." />
+        <Tarjeta className="flex flex-col gap-1 p-5">
+          <p className="text-sm font-semibold text-zinc-900">{administrador.nombre}</p>
+          <p className="text-sm text-zinc-500">{administrador.email}</p>
+        </Tarjeta>
+        <Tarjeta className="flex flex-col gap-3 border-red-200 p-5">
+          <div>
+            <h2 className="text-base font-semibold text-red-700">Eliminar mi cuenta</h2>
+            <p className="mt-0.5 text-sm text-zinc-500">
+              Cierra tu acceso y elimina las copropiedades que solo tú administras. Podrás volver a
+              registrarte con el mismo correo.
+            </p>
+          </div>
+          <div>
+            <EliminarCuenta email={administrador.email} esDemo={esCuentaDemo(administrador.email)} />
+          </div>
+        </Tarjeta>
+      </div>
+    );
+  }
 
   if (!copropiedad) {
     return (
