@@ -15,6 +15,7 @@ export type FilaImportada = {
   /** El mismo valor en porcentaje, para mostrarlo. */
   coeficientePorcentaje: string;
   areaM2: string | null;
+  estado: "OCUPADO" | "DESOCUPADO";
   yaExiste: boolean;
 };
 
@@ -26,6 +27,12 @@ export type ResultadoImportacion = EstadoAccionFormulario & {
   /** Cómo se interpretó la columna de coeficientes y cuánto suma el archivo. */
   formatoCoeficiente?: "porcentaje" | "fraccion";
   sumaArchivoPorcentaje?: string;
+  /**
+   * El contenido exacto que el servidor validó. La UI lo compara con lo que
+   * hay en pantalla para no ofrecer "Confirmar" sobre un texto distinto del
+   * que se revisó; al confirmar el servidor igual vuelve a validar todo.
+   */
+  contenidoValidado?: string;
 };
 
 export const ESTADO_INICIAL_IMPORTACION: ResultadoImportacion = { status: "idle" };

@@ -1,9 +1,8 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { startTransition, useActionState, useId, type FormEvent } from "react";
 import { crearCopropiedad } from "@/lib/actions/copropiedades";
 import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
-import { BotonSubmit } from "@/components/ui/boton";
 import { CLASES_CONTROL, Campo, MensajeAccion } from "@/components/ui/formulario";
 
 /**
@@ -11,14 +10,23 @@ import { CLASES_CONTROL, Campo, MensajeAccion } from "@/components/ui/formulario
  * deja como copropiedad activa y manda al administrador a cargar sus unidades.
  */
 export function CrearCopropiedadForm() {
-  const [estado, accion] = useActionState(crearCopropiedad, ESTADO_INICIAL_ACCION);
+  const [estado, accion, pendiente] = useActionState(crearCopropiedad, ESTADO_INICIAL_ACCION);
   const idNombre = useId();
   const idNit = useId();
   const idDireccion = useId();
   const idCiudad = useId();
 
+  // `onSubmit` en vez de `<form action>`: React 19 resetea el formulario al
+  // terminar el action aunque haya fallado la validación, y el administrador
+  // perdería lo que escribió justo cuando necesita corregirlo.
+  function alEnviar(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    const datos = new FormData(evento.currentTarget);
+    startTransition(() => accion(datos));
+  }
+
   return (
-    <form action={accion} className="flex flex-col gap-4">
+    <form onSubmit={alEnviar} className="flex flex-col gap-4">
       <Campo etiqueta="Nombre" htmlFor={idNombre} error={estado.errores?.nombre?.[0]}>
         <input
           id={idNombre}
@@ -69,9 +77,14 @@ export function CrearCopropiedadForm() {
       <MensajeAccion estado={estado} />
 
       <div>
-        <BotonSubmit pendiente="Creando…" anchoCompleto>
-          Crear copropiedad
-        </BotonSubmit>
+        <button
+          type="submit"
+          disabled={pendiente}
+          aria-busy={pendiente}
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        >
+          {pendiente ? "Creando…" : "Crear copropiedad"}
+        </button>
       </div>
     </form>
   );

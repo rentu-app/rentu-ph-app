@@ -2,13 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { EstadoInmueble, Prisma, TipoGestionCobro } from "@prisma/client";
+import { Prisma, TipoGestionCobro } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { convertirCoeficiente, detectarFormato } from "@/lib/coeficientes";
+import { procesarCsvUnidades } from "@/lib/csv-unidades";
 import { operacionesReactivarUnidad } from "@/lib/unidades-escritura";
 import { getContextoAdministrador } from "@/lib/session";
 import {
-  filaUnidadSchema,
   importarUnidadesSchema,
   registrarAvisoSchema,
   registrarGestionSchema,
@@ -203,22 +202,17 @@ export async function registrarAvisoCobro(
   }
 }
 
-function separarCampos(linea: string): string[] {
-  // CSV plano: separador `,` o `;` (Excel en configuración regional es-CO
-  // exporta con `;`). No se soportan campos con comillas ni comas internas —
-  // el formato esperado son cuatro columnas cortas sin texto libre.
-  const separador = linea.includes(";") ? ";" : ",";
-  return linea.split(separador).map((campo) => campo.trim());
-}
-
 /**
- * Importa el padrón de unidades desde un CSV
- * (`identificador,torre,coeficiente,area_m2`).
+ * Importa el padrón de unidades desde un CSV. El encabezado se reconoce por
+ * nombre y en cualquier orden (ver `procesarCsvUnidades`); `identificador` y
+ * `coeficiente` son obligatorias, `torre`, `area_m2` y `estado` opcionales.
  *
  * Es una importación REAL, no una maqueta: valida fila por fila, reporta los
  * errores con número de línea y solo escribe cuando el administrador
- * confirma. Es idempotente por `[copropiedadId, identificador]`: una unidad
- * que ya existe se actualiza (torre/coeficiente/área), no se duplica.
+ * confirma. Al confirmar, el servidor vuelve a leer y validar el CSV completo
+ * que llega en `contenido`; nunca se aceptan filas ya "validadas" desde el
+ * cliente. Es idempotente por `[copropiedadId, identificador]`: una unidad
+ * que ya existe se actualiza, no se duplica.
  *
  * Alcance deliberado: NO importa cartera histórica ni pagos. Cargar saldos
  * desde un Excel requiere decidir cómo conciliar periodos y recargos, y eso
@@ -228,53 +222,44 @@ export async function importarUnidadesCsv(
   _prevState: ResultadoImportacion,
   formData: FormData
 ): Promise<ResultadoImportacion> {
-  const archivo = formData.get("archivo");
-  let contenidoCrudo = String(formData.get("contenido") ?? "");
+  const contenidoCrudo = String(formData.get("contenido") ?? "");
+  const confirmar = formData.get("confirmar") === "true";
 
-  if (archivo instanceof File && archivo.size > 0) {
-    if (archivo.size > 1_000_000) {
-      return { status: "error", message: "El archivo supera 1 MB." };
-    }
-    contenidoCrudo = await archivo.text();
+  // Antes se perdía el contenido en silencio y la confirmación terminaba en 0
+  // filas: ahora un contenido vacío es siempre un error explícito.
+  if (contenidoCrudo.trim().length === 0) {
+    return {
+      status: "error",
+      message: confirmar
+        ? "No llegó el contenido del CSV, así que no se importó nada. Vuelve a validar el archivo."
+        : "Pega el contenido del CSV o adjunta el archivo.",
+    };
   }
 
   const validado = importarUnidadesSchema.safeParse({
     contenido: contenidoCrudo,
-    confirmar: formData.get("confirmar") ?? "false",
+    confirmar: confirmar ? "true" : "false",
   });
 
   if (!validado.success) {
     return {
       status: "error",
-      message: "Pega el contenido del CSV o adjunta el archivo.",
+      message: "El contenido del CSV no es válido (máximo 200.000 caracteres).",
       errores: z.flattenError(validado.error).fieldErrors,
     };
   }
 
-  const { contenido, confirmar } = validado.data;
+  const { contenido } = validado.data;
 
   try {
     const { copropiedad } = await getContextoAdministrador();
     if (!copropiedad) return SIN_COPROPIEDAD;
 
-    const lineas = contenido
-      .split(/\r?\n/)
-      .map((linea) => linea.trim())
-      .filter((linea) => linea.length > 0);
-
-    // Descarta el encabezado si viene.
-    const primeraCelda = separarCampos(lineas[0] ?? "")[0]?.toLowerCase();
-    const filas = primeraCelda === "identificador" ? lineas.slice(1) : lineas;
-
-    if (filas.length === 0) {
-      return { status: "error", message: "El archivo no tiene filas de datos." };
+    const procesado = procesarCsvUnidades(contenido);
+    if ("error" in procesado) {
+      return { status: "error", message: procesado.error };
     }
-    if (filas.length > 500) {
-      return {
-        status: "error",
-        message: "Máximo 500 filas por importación (divide el archivo).",
-      };
-    }
+    const { erroresFila, formato, sumaPorcentaje, tieneEstado } = procesado;
 
     const existentes = await prisma.inmueble.findMany({
       where: { copropiedadId: copropiedad.id },
@@ -284,72 +269,20 @@ export async function importarUnidadesCsv(
       existentes.map((unidad) => [unidad.identificador, unidad])
     );
 
-    // El formato de la columna de coeficientes (porcentaje o fracción) se
-    // decide por la suma de todo el archivo: ≈100 → porcentaje, ≈1 → fracción.
-    const { formato, suma: sumaCruda } = detectarFormato(
-      filas.map((linea) => separarCampos(linea)[2] ?? "")
-    );
+    const filasValidas = procesado.filasValidas.map((fila) => ({
+      ...fila,
+      yaExiste: porIdentificador.get(fila.identificador)?.deletedAt === null,
+    }));
 
-    const erroresFila: { linea: number; mensaje: string }[] = [];
-    const filasValidas: NonNullable<ResultadoImportacion["filasValidas"]> = [];
-    const vistas = new Set<string>();
-    const offset = primeraCelda === "identificador" ? 2 : 1;
-
-    filas.forEach((linea, indice) => {
-      const numeroLinea = indice + offset;
-      const [identificador, torre, coeficiente, areaM2] = separarCampos(linea);
-
-      const resultado = filaUnidadSchema.safeParse({
-        identificador,
-        torre,
-        coeficiente,
-        areaM2: areaM2 ?? "",
-      });
-
-      if (!resultado.success) {
-        erroresFila.push({
-          linea: numeroLinea,
-          mensaje: resultado.error.issues.map((issue) => issue.message).join(" · "),
-        });
-        return;
-      }
-
-      const convertido = convertirCoeficiente(resultado.data.coeficiente, formato);
-      if (!convertido.ok) {
-        erroresFila.push({ linea: numeroLinea, mensaje: convertido.error });
-        return;
-      }
-
-      if (vistas.has(resultado.data.identificador)) {
-        erroresFila.push({
-          linea: numeroLinea,
-          mensaje: `"${resultado.data.identificador}" está repetido en el archivo`,
-        });
-        return;
-      }
-      vistas.add(resultado.data.identificador);
-
-      filasValidas.push({
-        identificador: resultado.data.identificador,
-        torre: resultado.data.torre,
-        coeficiente: convertido.fraccion,
-        coeficientePorcentaje: convertido.porcentaje,
-        areaM2: resultado.data.areaM2 ? resultado.data.areaM2 : null,
-        yaExiste: porIdentificador.get(resultado.data.identificador)?.deletedAt === null,
-      });
-    });
-
-    const sumaArchivoPorcentaje = (
-      formato === "porcentaje" ? sumaCruda : sumaCruda.mul(100)
-    ).toFixed(3);
-    const detalleFormato = {
+    const detalle = {
       formatoCoeficiente: formato,
-      sumaArchivoPorcentaje,
+      sumaArchivoPorcentaje: sumaPorcentaje,
+      contenidoValidado: contenido,
     } as const;
     const textoFormato =
       formato === "porcentaje"
-        ? `Coeficientes interpretados como porcentaje (el archivo suma ${sumaArchivoPorcentaje} %).`
-        : `Coeficientes interpretados como fracción de 1 (el archivo suma ${sumaArchivoPorcentaje} %).`;
+        ? `Coeficientes interpretados como porcentaje (el archivo suma ${sumaPorcentaje} %).`
+        : `Coeficientes interpretados como fracción de 1 (el archivo suma ${sumaPorcentaje} %).`;
 
     if (!confirmar) {
       return {
@@ -361,16 +294,17 @@ export async function importarUnidadesCsv(
         filasValidas,
         erroresFila,
         confirmado: false,
-        ...detalleFormato,
+        ...detalle,
       };
     }
 
     if (filasValidas.length === 0) {
       return {
         status: "error",
-        message: "No hay filas válidas para importar.",
+        message: "No hay filas válidas para importar, así que no se guardó nada.",
         erroresFila,
         confirmado: false,
+        ...detalle,
       };
     }
 
@@ -385,12 +319,7 @@ export async function importarUnidadesCsv(
       // Una unidad borrada que vuelve en el CSV se reactiva como nueva (ver
       // `operacionesReactivarUnidad`); una activa solo actualiza sus datos.
       if (existente?.deletedAt) {
-        return [
-          ...operacionesReactivarUnidad(existente.id, {
-            ...datos,
-            estado: EstadoInmueble.OCUPADO,
-          }),
-        ];
+        return [...operacionesReactivarUnidad(existente.id, { ...datos, estado: fila.estado })];
       }
       return [
         prisma.inmueble.upsert({
@@ -400,11 +329,14 @@ export async function importarUnidadesCsv(
               identificador: fila.identificador,
             },
           },
-          update: datos,
+          // Sin columna `estado` en el CSV no se pisa el estado de una unidad
+          // que ya existe; las nuevas nacen OCUPADO.
+          update: tieneEstado ? { ...datos, estado: fila.estado } : datos,
           create: {
             copropiedadId: copropiedad.id,
             identificador: fila.identificador,
             ...datos,
+            estado: fila.estado,
           },
         }),
       ];
@@ -413,6 +345,7 @@ export async function importarUnidadesCsv(
     await prisma.$transaction(operaciones);
 
     revalidarCartera();
+    revalidatePath("/dashboard/unidades");
     revalidatePath("/dashboard/residentes");
 
     const creadas = filasValidas.filter((fila) => !fila.yaExiste).length;
@@ -426,7 +359,7 @@ export async function importarUnidadesCsv(
       filasValidas,
       erroresFila,
       confirmado: true,
-      ...detalleFormato,
+      ...detalle,
     };
   } catch (error) {
     console.error("importarUnidadesCsv", error);
