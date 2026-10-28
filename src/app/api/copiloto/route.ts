@@ -1,7 +1,9 @@
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { getAdministradorActual } from "@/lib/session";
-import { getCopropiedadPorId } from "@/lib/data/copropiedad";
+import { cookies } from "next/headers";
+import { COOKIE_COPROPIEDAD_ACTIVA, getAdministradorActual } from "@/lib/session";
+import { resolverCopropiedadActiva } from "@/lib/data/copropiedad";
+import { esCuentaDemo } from "@/lib/demo";
 import { generarEmbedding } from "@/lib/ai/embeddings";
 import { buscarChunksRelevantes } from "@/lib/data/documentos-ph";
 
@@ -26,7 +28,14 @@ export async function POST(request: Request) {
   // Igual que en las Server Actions: nunca confiamos en que el cliente tenga
   // acceso a la copropiedad solo porque la mandó en el body.
   const administrador = await getAdministradorActual();
-  const copropiedad = await getCopropiedadPorId(copropiedadId, administrador.id);
+  const cookieStore = await cookies();
+  const { copropiedad: activa } = await resolverCopropiedadActiva(
+    administrador.id,
+    cookieStore.get(COOKIE_COPROPIEDAD_ACTIVA)?.value,
+    esCuentaDemo(administrador.email)
+  );
+  // Debe ser la copropiedad ACTIVA, no cualquiera de las del administrador.
+  const copropiedad = activa?.id === copropiedadId ? activa : null;
   if (!copropiedad) {
     return new Response("Copropiedad no encontrada o sin acceso", { status: 403 });
   }

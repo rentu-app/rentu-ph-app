@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Building2, MapPin, Plus } from "lucide-react";
+import { esCuentaDemo } from "@/lib/demo";
 import { getAdministradorActual } from "@/lib/session";
 import { getCopropiedadesDeAdministrador } from "@/lib/data/copropiedad";
 import { seleccionarCopropiedad } from "@/lib/actions/copropiedades";
@@ -67,16 +68,18 @@ export default async function SeleccionarCopropiedadPage() {
           ))}
         </ul>
 
-        <div className="flex justify-center">
-          <FormPanel
-            triggerLabel="Agregar otra copropiedad"
-            title="Agregar otra copropiedad"
-            description="Queda como tu copropiedad activa."
-            icon={<Plus className="h-4 w-4" />}
-          >
-            <CrearCopropiedadForm />
-          </FormPanel>
-        </div>
+        {esCuentaDemo(administrador.email) ? null : (
+          <div className="flex justify-center">
+            <FormPanel
+              triggerLabel="Agregar otra copropiedad"
+              title="Agregar otra copropiedad"
+              description="Queda como tu copropiedad activa."
+              icon={<Plus className="h-4 w-4" />}
+            >
+              <CrearCopropiedadForm />
+            </FormPanel>
+          </div>
+        )}
       </div>
     </div>
   );

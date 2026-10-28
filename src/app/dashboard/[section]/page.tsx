@@ -306,7 +306,7 @@ async function ListaUnidades({
 
 // ---------------------------------- UNIDADES --------------------------------
 
-const PLANTILLA_CSV = `${FILA_CSV_ESPERADA}\nApto 101,Torre 1,0.04167,72.50\nApto 102,Torre 1,0.04167,72.50\nApto 201,Torre 2,0.04167,68.00\n`;
+const PLANTILLA_CSV = `${FILA_CSV_ESPERADA}\nApto 101,Torre 1,4.167,72.50\nApto 102,Torre 1,4.167,72.50\nApto 201,Torre 2,4.167,68.00\n`;
 const HREF_PLANTILLA = `data:text/csv;charset=utf-8,${encodeURIComponent(PLANTILLA_CSV)}`;
 
 /**
@@ -330,8 +330,9 @@ async function SeccionUnidades({ copropiedad }: { copropiedad: CopropiedadActiva
           <div>
             <h2 className="text-base font-semibold text-zinc-900">Subir CSV</h2>
             <p className="mt-0.5 text-sm text-zinc-500">
-              Ideal si ya tienes el padrón en Excel. Primero se valida y se muestra una vista
-              previa; nada se guarda hasta que confirmes.
+              Ideal si ya tienes el padrón en Excel. El coeficiente puede ir en porcentaje o en
+              fracción (se detecta por la suma del archivo). Primero se muestra una vista previa;
+              nada se guarda hasta que confirmes.
             </p>
             <a
               href={HREF_PLANTILLA}
@@ -380,7 +381,7 @@ async function SeccionUnidades({ copropiedad }: { copropiedad: CopropiedadActiva
                   <tr key={unidad.id}>
                     <Td className="font-medium text-zinc-900">{unidad.identificador}</Td>
                     <Td>{unidad.torre}</Td>
-                    <Td className="text-right tabular-nums">{unidad.coeficiente}</Td>
+                    <Td className="text-right tabular-nums">{unidad.coeficiente} %</Td>
                     <Td className="text-right tabular-nums">{unidad.areaM2 || "—"}</Td>
                     <Td>
                       <Etiqueta tono={unidad.estado === "OCUPADO" ? "exito" : "neutro"}>

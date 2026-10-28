@@ -112,10 +112,10 @@ export function UnidadForm({
         </Campo>
 
         <Campo
-          etiqueta="Coeficiente"
+          etiqueta="Coeficiente (%)"
           htmlFor={idCoeficiente}
           error={estado.errores?.coeficiente?.[0]}
-          ayuda="Fracción de 1, hasta 5 decimales (0.04167 = 4,167 %)."
+          ayuda="En porcentaje, como en la escritura. Máximo 3 decimales."
         >
           <input
             id={idCoeficiente}
@@ -125,7 +125,7 @@ export function UnidadForm({
             inputMode="decimal"
             required
             defaultValue={unidad?.coeficiente ?? ""}
-            placeholder="0.04167"
+            placeholder="4.167"
             className={`${CLASES_CONTROL} tabular-nums`}
           />
         </Campo>

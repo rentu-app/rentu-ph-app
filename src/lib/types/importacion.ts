@@ -10,7 +10,10 @@ import type { EstadoAccionFormulario } from "@/lib/types/estado-accion";
 export type FilaImportada = {
   identificador: string;
   torre: string;
+  /** Fracción de 5 decimales, tal como se guarda en la base. */
   coeficiente: string;
+  /** El mismo valor en porcentaje, para mostrarlo. */
+  coeficientePorcentaje: string;
   areaM2: string | null;
   yaExiste: boolean;
 };
@@ -20,6 +23,9 @@ export type ResultadoImportacion = EstadoAccionFormulario & {
   filasValidas?: FilaImportada[];
   erroresFila?: { linea: number; mensaje: string }[];
   confirmado?: boolean;
+  /** Cómo se interpretó la columna de coeficientes y cuánto suma el archivo. */
+  formatoCoeficiente?: "porcentaje" | "fraccion";
+  sumaArchivoPorcentaje?: string;
 };
 
 export const ESTADO_INICIAL_IMPORTACION: ResultadoImportacion = { status: "idle" };

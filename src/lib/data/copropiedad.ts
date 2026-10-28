@@ -70,7 +70,9 @@ export type CopropiedadActiva = Awaited<
  */
 export async function resolverCopropiedadActiva(
   administradorId: string,
-  idCookie: string | undefined
+  idCookie: string | undefined,
+  /** Cuenta demo: nunca se le pide elegir, abre su copropiedad principal. */
+  sinSeleccion = false
 ) {
   const copropiedades = await getCopropiedadesDeAdministrador(administradorId);
   const deCookie = idCookie
@@ -82,6 +84,12 @@ export async function resolverCopropiedadActiva(
   }
   if (copropiedades.length === 1) {
     return { copropiedad: copropiedades[0], copropiedades, requiereSeleccion: false };
+  }
+  if (sinSeleccion && copropiedades.length > 0) {
+    const principal =
+      copropiedades.find((copropiedad) => copropiedad.nombre.includes("Altos de Salitre")) ??
+      copropiedades[0];
+    return { copropiedad: principal, copropiedades, requiereSeleccion: false };
   }
   return {
     copropiedad: null,

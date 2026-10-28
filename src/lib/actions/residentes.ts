@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { RolEnInmueble, RolUsuario } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getAdministradorActual } from "@/lib/session";
+import { getContextoAdministrador } from "@/lib/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { generarPasswordTemporal, hashPassword } from "@/lib/password";
 import { invitarResidenteSchema } from "@/lib/validations/residentes";
@@ -42,15 +42,16 @@ export async function invitarResidente(
   const { nombre, email, telefono, rol, inmuebleId } = validado.data;
 
   try {
-    const administrador = await getAdministradorActual();
+    const { copropiedad } = await getContextoAdministrador();
+    if (!copropiedad) {
+      return { status: "error", message: "No tienes una copropiedad asignada todavía." };
+    }
 
     const inmueble = await prisma.inmueble.findFirst({
       where: {
         id: inmuebleId,
         deletedAt: null,
-        copropiedad: {
-          administradores: { some: { usuarioId: administrador.id, deletedAt: null } },
-        },
+        copropiedadId: copropiedad.id,
       },
       select: { id: true, identificador: true },
     });

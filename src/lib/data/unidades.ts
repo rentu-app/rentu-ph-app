@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { Prisma } from "@prisma/client";
+import { fraccionAPorcentaje } from "@/lib/coeficientes";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -29,10 +30,11 @@ export const getUnidadesDeCopropiedad = cache(async (copropiedadId: string) => {
       id: fila.id,
       identificador: fila.identificador,
       torre: fila.torre,
-      coeficiente: fila.coeficiente.toFixed(5),
+      coeficiente: fraccionAPorcentaje(fila.coeficiente),
       areaM2: fila.areaM2 ? fila.areaM2.toFixed(2) : "",
       estado: fila.estado,
     })),
+    /** Suma como fracción (1.00000 = 100 %); se muestra en porcentaje. */
     sumaCoeficientes: suma.toFixed(5),
   };
 });

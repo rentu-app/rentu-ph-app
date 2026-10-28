@@ -1,6 +1,7 @@
 import { Logo } from "@/components/ui/logo";
 import { SelectorCopropiedad } from "@/components/dashboard/selector-copropiedad";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
+import { esCuentaDemo } from "@/lib/demo";
 import { getContextoAdministrador } from "@/lib/session";
 
 /**
@@ -22,7 +23,7 @@ import { getContextoAdministrador } from "@/lib/session";
 export default async function DashboardLayout({
   children,
 }: LayoutProps<"/dashboard">) {
-  const { copropiedad, copropiedades } = await getContextoAdministrador();
+  const { administrador, copropiedad, copropiedades } = await getContextoAdministrador();
 
   return (
     <div className="min-h-full bg-zinc-50">
@@ -34,6 +35,7 @@ export default async function DashboardLayout({
               <SelectorCopropiedad
                 copropiedades={copropiedades}
                 activaId={copropiedad?.id}
+                puedeCrear={!esCuentaDemo(administrador.email)}
               />
             </div>
           </div>

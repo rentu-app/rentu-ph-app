@@ -5,7 +5,6 @@ import { z } from "zod";
 import { EstadoReserva, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
-  getAdministradorActual,
   getContextoAdministrador,
   getResidenteActual,
 } from "@/lib/session";
@@ -182,16 +181,17 @@ export async function actualizarEstadoReserva(
   const { reservaId, estado } = validado.data;
 
   try {
-    const administrador = await getAdministradorActual();
+    const { copropiedad } = await getContextoAdministrador();
+    if (!copropiedad) {
+      return { status: "error", message: "No tienes una copropiedad asignada todavía." };
+    }
 
     const reserva = await prisma.reserva.findFirst({
       where: {
         id: reservaId,
         deletedAt: null,
         zonaComun: {
-          copropiedad: {
-            administradores: { some: { usuarioId: administrador.id, deletedAt: null } },
-          },
+          copropiedadId: copropiedad.id,
         },
       },
       select: { id: true, zonaComunId: true, inmuebleId: true, fechaInicio: true, fechaFin: true },

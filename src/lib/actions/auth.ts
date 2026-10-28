@@ -7,6 +7,7 @@ import { RolUsuario } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { EMAIL_DEMO_ADMIN, esCuentaDemo } from "@/lib/demo";
 import { COOKIE_COPROPIEDAD_ACTIVA } from "@/lib/session";
 import { hashPassword } from "@/lib/password";
 import { registrarAdministradorSchema } from "@/lib/validations/registro";
@@ -56,7 +57,7 @@ export async function iniciarSesion(
 
     const usuario = await prisma.usuario.findFirst({
       where: { email: validado.data.email, deletedAt: null },
-      select: { id: true, rol: true },
+      select: { id: true, rol: true, email: true },
     });
     destino = usuario?.rol === RolUsuario.ADMINISTRADOR ? "/dashboard" : "/portal";
 
@@ -71,7 +72,8 @@ export async function iniciarSesion(
           copropiedad: { deletedAt: null },
         },
       });
-      if (totalCopropiedades >= 2) destino = "/seleccionar-copropiedad";
+      // La demo siempre abre su única copropiedad (Altos de Salitre).
+      if (totalCopropiedades >= 2 && !esCuentaDemo(usuario.email)) destino = "/seleccionar-copropiedad";
     }
 
     const destinoParam = formData.get("next");
@@ -88,8 +90,6 @@ export async function iniciarSesion(
 
   redirect(destino);
 }
-
-const EMAIL_DEMO_ADMIN = "admin.demo@example.com";
 
 /**
  * Entrada de un clic a la cuenta demo de administrador. La contraseña se lee

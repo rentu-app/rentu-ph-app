@@ -82,14 +82,10 @@ export const filaUnidadSchema = z.object({
     .min(1, "El identificador es obligatorio")
     .max(60, "Máximo 60 caracteres"),
   torre: z.string().trim().min(1, "La torre es obligatoria").max(60, "Máximo 60 caracteres"),
-  // El coeficiente de copropiedad se expresa como fracción de 1 (Ley 675):
-  // 0.04167 = 4,167%. Se permite hasta 5 decimales, igual que la columna
-  // `Decimal(7,5)` del schema.
-  coeficiente: z
-    .string()
-    .trim()
-    .regex(/^0?\.\d{1,5}$|^[01](\.\d{1,5})?$/, "Coeficiente inválido (ej. 0.04167)")
-    .refine((valor) => Number(valor) > 0, "El coeficiente debe ser mayor que 0"),
+  // El valor (porcentaje o fracción) se valida y convierte en
+  // `convertirCoeficiente` (src/lib/coeficientes.ts), porque el formato se
+  // decide mirando la suma de TODO el archivo, no una fila sola.
+  coeficiente: z.string().trim().min(1, "El coeficiente es obligatorio"),
   areaM2: z
     .string()
     .trim()

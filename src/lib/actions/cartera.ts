@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { Prisma, TipoGestionCobro } from "@prisma/client";
+import { EstadoInmueble, Prisma, TipoGestionCobro } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { convertirCoeficiente, detectarFormato } from "@/lib/coeficientes";
+import { operacionesReactivarUnidad } from "@/lib/unidades-escritura";
 import { getContextoAdministrador } from "@/lib/session";
 import {
   filaUnidadSchema,
@@ -276,10 +278,16 @@ export async function importarUnidadesCsv(
 
     const existentes = await prisma.inmueble.findMany({
       where: { copropiedadId: copropiedad.id },
-      select: { identificador: true },
+      select: { id: true, identificador: true, deletedAt: true },
     });
-    const identificadoresExistentes = new Set(
-      existentes.map((unidad) => unidad.identificador)
+    const porIdentificador = new Map(
+      existentes.map((unidad) => [unidad.identificador, unidad])
+    );
+
+    // El formato de la columna de coeficientes (porcentaje o fracción) se
+    // decide por la suma de todo el archivo: ≈100 → porcentaje, ≈1 → fracción.
+    const { formato, suma: sumaCruda } = detectarFormato(
+      filas.map((linea) => separarCampos(linea)[2] ?? "")
     );
 
     const erroresFila: { linea: number; mensaje: string }[] = [];
@@ -306,6 +314,12 @@ export async function importarUnidadesCsv(
         return;
       }
 
+      const convertido = convertirCoeficiente(resultado.data.coeficiente, formato);
+      if (!convertido.ok) {
+        erroresFila.push({ linea: numeroLinea, mensaje: convertido.error });
+        return;
+      }
+
       if (vistas.has(resultado.data.identificador)) {
         erroresFila.push({
           linea: numeroLinea,
@@ -318,22 +332,36 @@ export async function importarUnidadesCsv(
       filasValidas.push({
         identificador: resultado.data.identificador,
         torre: resultado.data.torre,
-        coeficiente: resultado.data.coeficiente,
+        coeficiente: convertido.fraccion,
+        coeficientePorcentaje: convertido.porcentaje,
         areaM2: resultado.data.areaM2 ? resultado.data.areaM2 : null,
-        yaExiste: identificadoresExistentes.has(resultado.data.identificador),
+        yaExiste: porIdentificador.get(resultado.data.identificador)?.deletedAt === null,
       });
     });
+
+    const sumaArchivoPorcentaje = (
+      formato === "porcentaje" ? sumaCruda : sumaCruda.mul(100)
+    ).toFixed(3);
+    const detalleFormato = {
+      formatoCoeficiente: formato,
+      sumaArchivoPorcentaje,
+    } as const;
+    const textoFormato =
+      formato === "porcentaje"
+        ? `Coeficientes interpretados como porcentaje (el archivo suma ${sumaArchivoPorcentaje} %).`
+        : `Coeficientes interpretados como fracción de 1 (el archivo suma ${sumaArchivoPorcentaje} %).`;
 
     if (!confirmar) {
       return {
         status: filasValidas.length > 0 ? "success" : "error",
         message:
           filasValidas.length > 0
-            ? `Vista previa: ${filasValidas.length} fila(s) válida(s), ${erroresFila.length} con error. Nada se ha guardado todavía.`
+            ? `Vista previa: ${filasValidas.length} fila(s) válida(s), ${erroresFila.length} con error. ${textoFormato} Nada se ha guardado todavía.`
             : "Ninguna fila es válida. Revisa los errores y vuelve a intentar.",
         filasValidas,
         erroresFila,
         confirmado: false,
+        ...detalleFormato,
       };
     }
 
@@ -346,8 +374,25 @@ export async function importarUnidadesCsv(
       };
     }
 
-    await prisma.$transaction(
-      filasValidas.map((fila) =>
+    const operaciones = filasValidas.flatMap((fila) => {
+      const datos = {
+        torre: fila.torre,
+        coeficiente: new Prisma.Decimal(fila.coeficiente),
+        areaM2: fila.areaM2 ? new Prisma.Decimal(fila.areaM2) : null,
+      };
+      const existente = porIdentificador.get(fila.identificador);
+
+      // Una unidad borrada que vuelve en el CSV se reactiva como nueva (ver
+      // `operacionesReactivarUnidad`); una activa solo actualiza sus datos.
+      if (existente?.deletedAt) {
+        return [
+          ...operacionesReactivarUnidad(existente.id, {
+            ...datos,
+            estado: EstadoInmueble.OCUPADO,
+          }),
+        ];
+      }
+      return [
         prisma.inmueble.upsert({
           where: {
             copropiedadId_identificador: {
@@ -355,22 +400,17 @@ export async function importarUnidadesCsv(
               identificador: fila.identificador,
             },
           },
-          update: {
-            torre: fila.torre,
-            coeficiente: new Prisma.Decimal(fila.coeficiente),
-            areaM2: fila.areaM2 ? new Prisma.Decimal(fila.areaM2) : null,
-            deletedAt: null,
-          },
+          update: datos,
           create: {
             copropiedadId: copropiedad.id,
             identificador: fila.identificador,
-            torre: fila.torre,
-            coeficiente: new Prisma.Decimal(fila.coeficiente),
-            areaM2: fila.areaM2 ? new Prisma.Decimal(fila.areaM2) : null,
+            ...datos,
           },
-        })
-      )
-    );
+        }),
+      ];
+    });
+
+    await prisma.$transaction(operaciones);
 
     revalidarCartera();
     revalidatePath("/dashboard/residentes");
@@ -386,6 +426,7 @@ export async function importarUnidadesCsv(
       filasValidas,
       erroresFila,
       confirmado: true,
+      ...detalleFormato,
     };
   } catch (error) {
     console.error("importarUnidadesCsv", error);

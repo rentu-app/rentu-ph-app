@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EstadoPQRS } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getAdministradorActual, getResidenteActual } from "@/lib/session";
+import { getContextoAdministrador, getResidenteActual } from "@/lib/session";
 import {
   crearPqrsResidenteSchema,
   crearPqrsSchema,
@@ -59,15 +59,16 @@ export async function crearPqrs(
   const { inmuebleId, dirigidoAId, tipo, titulo, descripcion } = validado.data;
 
   try {
-    const administrador = await getAdministradorActual();
+    const { administrador, copropiedad } = await getContextoAdministrador();
+    if (!copropiedad) {
+      return { status: "error", message: "No tienes una copropiedad asignada todavía." };
+    }
 
     const inmueble = await prisma.inmueble.findFirst({
       where: {
         id: inmuebleId,
         deletedAt: null,
-        copropiedad: {
-          administradores: { some: { usuarioId: administrador.id, deletedAt: null } },
-        },
+        copropiedadId: copropiedad.id,
       },
       select: {
         id: true,
@@ -185,16 +186,17 @@ export async function responderPqrs(
   const { pqrsId, estado, respuesta } = validado.data;
 
   try {
-    const administrador = await getAdministradorActual();
+    const { administrador, copropiedad } = await getContextoAdministrador();
+    if (!copropiedad) {
+      return { status: "error", message: "No tienes una copropiedad asignada todavía." };
+    }
 
     const pqrs = await prisma.pqrs.findFirst({
       where: {
         id: pqrsId,
         deletedAt: null,
         inmueble: {
-          copropiedad: {
-            administradores: { some: { usuarioId: administrador.id, deletedAt: null } },
-          },
+          copropiedadId: copropiedad.id,
         },
       },
       select: { id: true },

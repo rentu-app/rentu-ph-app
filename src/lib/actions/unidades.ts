@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getContextoAdministrador } from "@/lib/session";
+import { operacionesReactivarUnidad } from "@/lib/unidades-escritura";
 import { editarUnidadSchema, unidadManualSchema } from "@/lib/validations/unidades";
 import type { EstadoAccionFormulario } from "@/lib/types/estado-accion";
 
@@ -83,10 +84,7 @@ export async function crearUnidad(
     }
 
     if (existente) {
-      await prisma.inmueble.update({
-        where: { id: existente.id },
-        data: { ...datos, deletedAt: null },
-      });
+      await prisma.$transaction([...operacionesReactivarUnidad(existente.id, datos)]);
     } else {
       await prisma.inmueble.create({
         data: { copropiedadId: copropiedad.id, identificador, ...datos },

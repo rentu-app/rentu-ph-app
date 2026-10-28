@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EstadoInmueble } from "@prisma/client";
+import { convertirCoeficiente } from "@/lib/coeficientes";
 import { filaUnidadSchema } from "@/lib/validations/cartera";
 
 export const ETIQUETAS_ESTADO_INMUEBLE: Record<EstadoInmueble, string> = {
@@ -24,7 +25,16 @@ export const unidadManualSchema = z.object({
     .optional()
     .transform((valor) => valor || TORRE_POR_DEFECTO),
   identificador: filaUnidadSchema.shape.identificador,
-  coeficiente: filaUnidadSchema.shape.coeficiente,
+  // El administrador escribe porcentaje (4.167); el resto del sistema recibe
+  // la fracción como string de 5 decimales ("0.04167").
+  coeficiente: z.string().transform((valor, ctx) => {
+    const resultado = convertirCoeficiente(valor, "porcentaje");
+    if (!resultado.ok) {
+      ctx.issues.push({ code: "custom", message: resultado.error, input: valor });
+      return z.NEVER;
+    }
+    return resultado.fraccion;
+  }),
   areaM2: filaUnidadSchema.shape.areaM2,
   estado: z.enum(EstadoInmueble),
 });

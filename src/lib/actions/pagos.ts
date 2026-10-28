@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { Prisma, EstadoCuenta, TipoGestionCobro } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getAdministradorActual } from "@/lib/session";
+import { getContextoAdministrador } from "@/lib/session";
 import { calcularSaldoPendiente } from "@/lib/data/cartera";
 import { registrarPagoSchema } from "@/lib/validations/pagos";
 import type { EstadoAccionFormulario } from "@/lib/types/estado-accion";
@@ -18,21 +18,20 @@ async function aplicarPago(params: {
   monto?: string;
   pagarSaldoTotal?: boolean;
 }): Promise<EstadoAccionPago> {
-  const administrador = await getAdministradorActual();
+  const { administrador, copropiedad } = await getContextoAdministrador();
+  if (!copropiedad) {
+    return { status: "error", message: "No tienes una copropiedad asignada todavía." };
+  }
 
   // Nunca confiamos en un monto/estado que venga del cliente: se relee la
-  // cuenta desde la base filtrando por las copropiedades que administra el
-  // usuario autenticado, y todo el cálculo de saldo se rehace en el servidor.
+  // cuenta desde la base filtrando por la copropiedad ACTIVA del
+  // administrador autenticado, y todo el cálculo de saldo se rehace en el servidor.
   const cuenta = await prisma.cuentaDeCobro.findFirst({
     where: {
       id: params.cuentaDeCobroId,
       deletedAt: null,
       inmueble: {
-        copropiedad: {
-          administradores: {
-            some: { usuarioId: administrador.id, deletedAt: null },
-          },
-        },
+        copropiedadId: copropiedad.id,
       },
     },
     include: {

@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { COOKIE_COPROPIEDAD_ACTIVA, getAdministradorActual } from "@/lib/session";
 import { getCopropiedadPorId } from "@/lib/data/copropiedad";
+import { esCuentaDemo } from "@/lib/demo";
 import { copropiedadNuevaSchema } from "@/lib/validations/unidades";
 import type { EstadoAccionFormulario } from "@/lib/types/estado-accion";
 
@@ -72,6 +73,13 @@ export async function crearCopropiedad(
 
   try {
     const administrador = await getAdministradorActual();
+
+    if (esCuentaDemo(administrador.email)) {
+      return {
+        status: "error",
+        message: "La cuenta demo no puede crear copropiedades.",
+      };
+    }
 
     if (nit) {
       const conMismoNit = await prisma.copropiedad.findFirst({

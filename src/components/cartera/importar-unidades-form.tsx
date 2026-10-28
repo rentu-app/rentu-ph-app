@@ -9,9 +9,9 @@ import { CLASES_CONTROL, CLASES_TEXTAREA, Campo, MensajeAccion } from "@/compone
 import { Etiqueta } from "@/components/ui/primitivos";
 
 const EJEMPLO = `${FILA_CSV_ESPERADA}
-Apto 101,Torre 1,0.04167,72.50
-Apto 102,Torre 1,0.04167,72.50
-Apto 201,Torre 2,0.04167,68.00`;
+Apto 101,Torre 1,4.167,72.50
+Apto 102,Torre 1,4.167,72.50
+Apto 201,Torre 2,4.167,68.00`;
 
 /**
  * Importación real del padrón de unidades desde CSV, en dos pasos:
@@ -57,7 +57,7 @@ export function ImportarUnidadesForm() {
         etiqueta="Contenido pegado"
         htmlFor={idContenido}
         error={estado.errores?.contenido?.[0]}
-        ayuda={`Columnas esperadas: ${FILA_CSV_ESPERADA}`}
+        ayuda={`Columnas esperadas: ${FILA_CSV_ESPERADA}. El coeficiente puede ir en porcentaje (4.167) o en fracción (0.04167).`}
       >
         <textarea
           id={idContenido}
@@ -105,7 +105,7 @@ export function ImportarUnidadesForm() {
                 className="flex items-center justify-between gap-2 px-3 py-2"
               >
                 <span className="truncate text-zinc-800">
-                  {fila.identificador} · {fila.torre} · coef {fila.coeficiente}
+                  {fila.identificador} · {fila.torre} · coef {fila.coeficientePorcentaje} %
                   {fila.areaM2 ? ` · ${fila.areaM2} m²` : ""}
                 </span>
                 <span className="shrink-0 text-zinc-400">

@@ -24,9 +24,12 @@ type CopropiedadResumen = {
 export function SelectorCopropiedad({
   copropiedades,
   activaId,
+  puedeCrear,
 }: {
   copropiedades: CopropiedadResumen[];
   activaId: string | undefined;
+  /** false para la cuenta demo: se oculta "Agregar otra copropiedad". */
+  puedeCrear: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
   const [creando, setCreando] = useState(false);
@@ -107,17 +110,19 @@ export function SelectorCopropiedad({
               );
             })}
           </ul>
-          <button
-            type="button"
-            onClick={() => {
-              setAbierto(false);
-              setCreando(true);
-            }}
-            className="mt-1 flex min-h-11 w-full items-center gap-2 rounded-md border-t border-zinc-100 px-2.5 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
-          >
-            <Plus className="h-4 w-4" />
-            Agregar otra copropiedad
-          </button>
+          {puedeCrear ? (
+            <button
+              type="button"
+              onClick={() => {
+                setAbierto(false);
+                setCreando(true);
+              }}
+              className="mt-1 flex min-h-11 w-full items-center gap-2 rounded-md border-t border-zinc-100 px-2.5 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+            >
+              <Plus className="h-4 w-4" />
+              Agregar otra copropiedad
+            </button>
+          ) : null}
         </div>
       ) : null}
 
