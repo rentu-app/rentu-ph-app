@@ -57,23 +57,16 @@ export async function iniciarSesion(
 
     const usuario = await prisma.usuario.findFirst({
       where: { email: validado.data.email, deletedAt: null },
-      select: { id: true, rol: true, email: true },
+      select: { rol: true, email: true },
     });
     destino = usuario?.rol === RolUsuario.ADMINISTRADOR ? "/dashboard" : "/portal";
 
-    // Con 2 o más copropiedades el administrador elige cuál abrir; con 1
-    // entra directo (el dashboard la resuelve solo).
+    // Todo administrador pasa por /seleccionar-copropiedad después del login,
+    // aunque tenga una sola. Excepción: la cuenta demo, que entra directo a
+    // Altos de Salitre.
     if (usuario?.rol === RolUsuario.ADMINISTRADOR) {
       await olvidarCopropiedadActiva();
-      const totalCopropiedades = await prisma.administradorCopropiedad.count({
-        where: {
-          usuarioId: usuario.id,
-          deletedAt: null,
-          copropiedad: { deletedAt: null },
-        },
-      });
-      // La demo siempre abre su única copropiedad (Altos de Salitre).
-      if (totalCopropiedades >= 2 && !esCuentaDemo(usuario.email)) destino = "/seleccionar-copropiedad";
+      if (!esCuentaDemo(usuario.email)) destino = "/seleccionar-copropiedad";
     }
 
     const destinoParam = formData.get("next");

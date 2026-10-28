@@ -1,7 +1,7 @@
 import { Logo } from "@/components/ui/logo";
-import { SelectorCopropiedad } from "@/components/dashboard/selector-copropiedad";
+import Link from "next/link";
+import { ArrowLeftRight, MapPin } from "lucide-react";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
-import { esCuentaDemo } from "@/lib/demo";
 import { getContextoAdministrador } from "@/lib/session";
 
 /**
@@ -23,7 +23,7 @@ import { getContextoAdministrador } from "@/lib/session";
 export default async function DashboardLayout({
   children,
 }: LayoutProps<"/dashboard">) {
-  const { administrador, copropiedad, copropiedades } = await getContextoAdministrador();
+  const { copropiedad } = await getContextoAdministrador();
 
   return (
     <div className="min-h-full bg-zinc-50">
@@ -32,12 +32,29 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-2.5">
             <Logo altura={36} className="shrink-0" />
             <div className="min-w-0 flex-1">
-              <SelectorCopropiedad
-                copropiedades={copropiedades}
-                activaId={copropiedad?.id}
-                puedeCrear={!esCuentaDemo(administrador.email)}
-              />
+              <div data-tour="selector-copropiedad" className="min-w-0">
+                <p className="truncate text-sm font-semibold leading-tight text-zinc-900">
+                  {copropiedad?.nombre ?? "Rentu"}
+                </p>
+                {copropiedad ? (
+                  <p className="flex items-center gap-1 truncate text-xs leading-tight text-zinc-500">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="truncate">
+                      {copropiedad.direccion} · {copropiedad.ciudad} · {copropiedad.totalUnidades}{" "}
+                      unidades
+                    </span>
+                  </p>
+                ) : null}
+              </div>
             </div>
+            <Link
+              href="/seleccionar-copropiedad"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-md border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 sm:min-h-9"
+            >
+              <ArrowLeftRight className="h-4 w-4" />
+              <span className="hidden sm:inline">Cambiar copropiedad</span>
+              <span className="sm:hidden">Cambiar</span>
+            </Link>
           </div>
           <DashboardNav />
         </div>
