@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { cerrarSesion } from "@/lib/actions/auth";
 import {
   CalendarPlus,
   Download,
   FileStack,
+  LogOut,
   HardHat,
   MessageSquarePlus,
   UserPlus,
@@ -102,7 +104,7 @@ const SECCIONES = [
   "residentes",
   "prestadores",
   "documentos",
-  "configuracion",
+  "cuenta",
 ] as const;
 type Seccion = (typeof SECCIONES)[number];
 
@@ -118,7 +120,7 @@ const TITULOS: Record<Seccion, string> = {
   residentes: "Residentes · Rentu",
   prestadores: "Prestadores · Rentu",
   documentos: "Documentos y Copiloto · Rentu",
-  configuracion: "Configuración · Rentu",
+  cuenta: "Cuenta · Rentu",
 };
 
 export async function generateMetadata(
@@ -140,19 +142,30 @@ export default async function DashboardSeccionPage(
   props: PageProps<"/dashboard/[section]">
 ) {
   const { section } = await props.params;
+  // La sección se llamaba "configuracion": se conservan los enlaces viejos.
+  if (section === "configuracion") redirect("/dashboard/cuenta");
   if (!esSeccionValida(section)) notFound();
 
   const { administrador, copropiedad } = await getContextoAdministrador();
   const searchParams = await props.searchParams;
 
-  // Configuración es de la cuenta, no de una copropiedad: se muestra aunque no haya una activa.
-  if (section === "configuracion") {
+  // Cuenta es de la persona, no de una copropiedad: se muestra aunque no haya una activa.
+  if (section === "cuenta") {
     return (
       <div className="flex flex-col gap-8">
-        <EncabezadoPagina titulo="Configuración" descripcion="Tu cuenta de administrador." />
+        <EncabezadoPagina titulo="Cuenta" descripcion="Tu acceso a Rentu." />
         <Tarjeta className="flex flex-col gap-1 p-5">
           <p className="text-sm font-semibold text-zinc-900">{administrador.nombre}</p>
           <p className="text-sm text-zinc-500">{administrador.email}</p>
+          <form action={cerrarSesion} className="mt-3">
+            <button
+              type="submit"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 sm:w-auto"
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar sesión
+            </button>
+          </form>
         </Tarjeta>
         <Tarjeta className="flex flex-col gap-3 border-red-200 p-5">
           <div>

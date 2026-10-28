@@ -8,14 +8,12 @@ import {
   FileStack,
   HardHat,
   LayoutDashboard,
-  LogOut,
-  Settings,
+  UserRound,
   MessagesSquare,
   Users,
   Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { cerrarSesion } from "@/lib/actions/auth";
 
 const ENLACES: { href: string; etiqueta: string; corta: string; icono: LucideIcon }[] = [
   { href: "/dashboard", etiqueta: "Resumen", corta: "Resumen", icono: LayoutDashboard },
@@ -26,7 +24,7 @@ const ENLACES: { href: string; etiqueta: string; corta: string; icono: LucideIco
   { href: "/dashboard/residentes", etiqueta: "Residentes", corta: "Residentes", icono: Users },
   { href: "/dashboard/prestadores", etiqueta: "Prestadores", corta: "Prestadores", icono: HardHat },
   { href: "/dashboard/documentos", etiqueta: "Documentos", corta: "Docs", icono: FileStack },
-  { href: "/dashboard/configuracion", etiqueta: "Configuración", corta: "Ajustes", icono: Settings },
+  { href: "/dashboard/cuenta", etiqueta: "Cuenta", corta: "Cuenta", icono: UserRound },
 ] as const;
 
 /**
@@ -59,6 +57,8 @@ export function DashboardNav() {
             href={enlace.href}
             aria-current={activo ? "page" : undefined}
             className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-md px-3 transition-colors ${
+              enlace.href.endsWith("/cuenta") ? "ml-auto" : ""
+            } ${
               activo
                 ? "bg-brand-50 text-brand-700"
                 : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
@@ -71,15 +71,6 @@ export function DashboardNav() {
         );
       })}
 
-      <form action={cerrarSesion} className="ml-auto shrink-0 pl-2">
-        <button
-          type="submit"
-          className="flex min-h-11 items-center gap-1.5 rounded-md px-3 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800"
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          <span className="hidden lg:inline">Salir</span>
-        </button>
-      </form>
     </nav>
   );
 }

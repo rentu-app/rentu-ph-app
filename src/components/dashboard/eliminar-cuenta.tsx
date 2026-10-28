@@ -7,7 +7,7 @@ import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
 import { Modal } from "@/components/ui/modal";
 import { CLASES_CONTROL, Campo, MensajeAccion } from "@/components/ui/formulario";
 
-/** Zona de peligro de Configuración. En la cuenta demo el botón está bloqueado. */
+/** Zona de peligro de Cuenta. En la cuenta demo el botón está bloqueado. */
 export function EliminarCuenta({ email, esDemo }: { email: string; esDemo: boolean }) {
   const [abierto, setAbierto] = useState(false);
   const [escrito, setEscrito] = useState("");
@@ -29,12 +29,12 @@ export function EliminarCuenta({ email, esDemo }: { email: string; esDemo: boole
         type="button"
         disabled={esDemo}
         onClick={() => setAbierto(true)}
-        className="inline-flex min-h-11 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-red-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
       >
         Eliminar mi cuenta
       </button>
       {esDemo ? (
-        <p className="mt-2 text-xs text-zinc-500">La cuenta demo no se puede eliminar.</p>
+        <p className="mt-2 text-xs text-zinc-500">La cuenta demo no se puede eliminar</p>
       ) : null}
 
       <Modal
@@ -66,6 +66,7 @@ export function EliminarCuenta({ email, esDemo }: { email: string; esDemo: boole
               name="email"
               type="email"
               autoComplete="off"
+              autoFocus
               autoCapitalize="none"
               value={escrito}
               onChange={(evento) => setEscrito(evento.target.value)}

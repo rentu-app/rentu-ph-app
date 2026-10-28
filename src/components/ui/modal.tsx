@@ -31,12 +31,20 @@ export function Modal({
   children: ReactNode;
 }) {
   const contenedorRef = useRef<HTMLDivElement>(null);
+  // `onClose` suele llegar como función inline nueva en cada render del padre.
+  // Si fuera dependencia del efecto, este se repetiría con cada tecla escrita en
+  // un formulario cuyo estado vive en el padre, y `focus()` le quitaría el foco
+  // al input. Con la ref el efecto solo depende de `open`.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
 
     function alPresionarTecla(evento: KeyboardEvent) {
-      if (evento.key === "Escape") onClose();
+      if (evento.key === "Escape") onCloseRef.current();
     }
     document.addEventListener("keydown", alPresionarTecla);
 
@@ -46,7 +54,10 @@ export function Modal({
     const overflowPrevio = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    contenedorRef.current?.focus();
+    // Solo se enfoca el diálogo si el foco no quedó ya dentro (p. ej. un input con autoFocus).
+    if (!contenedorRef.current?.contains(document.activeElement)) {
+      contenedorRef.current?.focus();
+    }
 
     // Otros elementos flotantes (botón de ayuda) se ocultan con este atributo.
     document.body.setAttribute("data-modal-abierto", "");
@@ -56,7 +67,7 @@ export function Modal({
       document.removeEventListener("keydown", alPresionarTecla);
       document.body.style.overflow = overflowPrevio;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
