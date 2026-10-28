@@ -8,6 +8,7 @@ import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
 import { BotonSubmit } from "@/components/ui/boton";
 import { CLASES_CONTROL, Campo, MensajeAccion } from "@/components/ui/formulario";
 import { AvisoSimulacion } from "@/components/ui/primitivos";
+import { unidadConTorre } from "@/lib/formatters";
 
 const ROLES: { value: RolEnInmueble; label: string }[] = [
   { value: RolEnInmueble.PROPIETARIO, label: "Propietario" },
@@ -96,7 +97,7 @@ export function InvitarResidenteForm({ unidades }: { unidades: UnidadParaInvitar
           <select id={idUnidad} name="inmuebleId" required className={CLASES_CONTROL}>
             {unidades.map((unidad) => (
               <option key={unidad.id} value={unidad.id}>
-                {unidad.identificador} — {unidad.torre}
+                {unidadConTorre(unidad.identificador, unidad.torre, "guion")}
               </option>
             ))}
           </select>

@@ -12,6 +12,7 @@ import {
   Campo,
   MensajeAccion,
 } from "@/components/ui/formulario";
+import { unidadConTorre } from "@/lib/formatters";
 
 const ETIQUETAS_TIPO: Record<TipoPQRS, string> = {
   PETICION: "Petición",
@@ -69,7 +70,7 @@ export function CrearPqrsForm({ unidades }: { unidades: UnidadConResidentes[] })
           >
             {unidadesConResidentes.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.identificador} — {item.torre}
+                {unidadConTorre(item.identificador, item.torre, "guion")}
               </option>
             ))}
           </select>

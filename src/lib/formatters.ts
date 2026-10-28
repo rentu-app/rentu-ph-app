@@ -59,3 +59,26 @@ export function formatearPeriodo(periodo: string): string {
   const indice = Number(mes) - 1;
   return `${nombresMes[indice] ?? mes} ${anio}`;
 }
+
+/**
+ * La torre es opcional: una unidad sin torre guarda "" (cadena vacía; la
+ * columna es NOT NULL). Estos helpers deciden cómo se ve en pantalla.
+ */
+export const ETIQUETA_SIN_TORRE = "Sin torre";
+
+/** Valor de `?torre=` en la URL para el grupo de unidades sin torre. */
+export const TORRE_VACIA_PARAM = "sin-torre";
+
+export function etiquetaTorre(torre: string): string {
+  return torre.trim() === "" ? ETIQUETA_SIN_TORRE : torre;
+}
+
+/** "Apto 101 (Torre 2)" / "Apto 101 — Torre 2"; sin torre, solo el identificador. */
+export function unidadConTorre(
+  identificador: string,
+  torre: string,
+  estilo: "parentesis" | "guion" = "parentesis"
+): string {
+  if (torre.trim() === "") return identificador;
+  return estilo === "parentesis" ? `${identificador} (${torre})` : `${identificador} — ${torre}`;
+}

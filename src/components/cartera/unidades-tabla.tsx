@@ -9,7 +9,7 @@ import {
   Td,
   Th,
 } from "@/components/ui/primitivos";
-import { formatearFecha, formatearMoneda } from "@/lib/formatters";
+import { formatearFecha, formatearMoneda, etiquetaTorre } from "@/lib/formatters";
 
 /**
  * Listado de unidades con su cartera.
@@ -52,9 +52,11 @@ export function UnidadesTabla({
                   <p className="truncate font-semibold text-zinc-900">
                     {unidad.identificador}
                   </p>
-                  <span className="shrink-0 text-xs text-zinc-400">
-                    {unidad.torre}
-                  </span>
+                  {unidad.torre ? (
+                    <span className="shrink-0 text-xs text-zinc-400">
+                      {unidad.torre}
+                    </span>
+                  ) : null}
                 </div>
                 <p className="mt-0.5 truncate text-xs text-zinc-500">
                   {unidad.residentes.length > 0
@@ -103,7 +105,7 @@ export function UnidadesTabla({
                   <Td className="font-medium text-zinc-900">
                     {unidad.identificador}
                   </Td>
-                  <Td className="text-zinc-500">{unidad.torre}</Td>
+                  <Td className="text-zinc-500">{etiquetaTorre(unidad.torre)}</Td>
                   <Td className="max-w-48 truncate text-zinc-500">
                     {unidad.residentes.length > 0
                       ? unidad.residentes.map((r) => r.nombre).join(", ")
@@ -182,7 +184,7 @@ export function UnidadesPrioritarias({
                 <p className="truncate font-semibold text-zinc-900">
                   {unidad.identificador}
                 </p>
-                <p className="text-xs text-zinc-500">{unidad.torre}</p>
+                {unidad.torre ? <p className="text-xs text-zinc-500">{unidad.torre}</p> : null}
               </div>
               <DiasMoraBadge dias={unidad.diasMora} />
             </div>

@@ -6,7 +6,6 @@ import {
   type FormatoCoeficiente,
 } from "@/lib/coeficientes";
 import { filaUnidadSchema } from "@/lib/validations/cartera";
-import { TORRE_POR_DEFECTO } from "@/lib/validations/unidades";
 import type { FilaImportada } from "@/lib/types/importacion";
 
 /**
@@ -167,7 +166,7 @@ export function procesarCsvUnidades(
   for (const { linea, valores } of celdas) {
     const resultado = filaUnidadSchema.safeParse({
       identificador: valores.identificador ?? "",
-      torre: valores.torre || TORRE_POR_DEFECTO,
+      torre: valores.torre ?? "",
       coeficiente: valores.coeficiente ?? "",
       areaM2: valores.area ?? "",
     });

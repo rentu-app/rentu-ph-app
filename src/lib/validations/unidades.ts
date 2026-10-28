@@ -8,9 +8,6 @@ export const ETIQUETAS_ESTADO_INMUEBLE: Record<EstadoInmueble, string> = {
   DESOCUPADO: "Desocupado",
 };
 
-/** Torre que se asigna cuando el administrador la deja en blanco. */
-export const TORRE_POR_DEFECTO = "Torre 1";
-
 /**
  * Alta/edición manual de una unidad. Reutiliza los campos de la fila del CSV
  * (`filaUnidadSchema`) para que ambas vías apliquen exactamente las mismas
@@ -23,7 +20,7 @@ export const unidadManualSchema = z.object({
     .trim()
     .max(60, "Máximo 60 caracteres")
     .optional()
-    .transform((valor) => valor || TORRE_POR_DEFECTO),
+    .transform((valor) => valor ?? ""),
   identificador: filaUnidadSchema.shape.identificador,
   // El administrador escribe porcentaje (4.167); el resto del sistema recibe
   // la fracción como string de 5 decimales ("0.04167").

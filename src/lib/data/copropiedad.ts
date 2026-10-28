@@ -52,7 +52,8 @@ export const getCopropiedadesDeAdministrador = cache(async (administradorId: str
       totalUnidades: copropiedad.inmuebles.length,
       torres: [...porTorre.entries()]
         .map(([nombre, unidades]) => ({ nombre, unidades }))
-        .sort((a, b) => a.nombre.localeCompare(b.nombre)),
+        // "Sin torre" ("") siempre al final.
+        .sort((a, b) => Number(a.nombre === "") - Number(b.nombre === "") || a.nombre.localeCompare(b.nombre)),
     };
   });
 });

@@ -446,7 +446,7 @@ export async function getUnidadesFiltradas(
   const busqueda = filtro.busqueda?.trim().toLowerCase();
 
   return unidades
-    .filter((unidad) => (filtro.torre ? unidad.torre === filtro.torre : true))
+    .filter((unidad) => (filtro.torre !== undefined ? unidad.torre === filtro.torre : true))
     .filter((unidad) => {
       if (filtro.situacion === "con-saldo") return unidad.saldoTotal > 0;
       if (filtro.situacion === "en-mora") return unidad.diasMora > 0;

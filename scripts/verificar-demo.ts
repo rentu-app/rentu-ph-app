@@ -152,8 +152,8 @@ async function main() {
     // El esquema ya NO rechaza un coeficiente en %: cualquier valor no vacío
     // pasa y la conversión decide (ver sección siguiente).
     ["coeficiente en %", { identificador: "Apto D103", torre: "Torre D", coeficiente: "4.167", areaM2: "70" }, "acepta"],
-    // El esquema exige torre; el importador la rellena con "Torre 1" antes de validar.
-    ["sin torre (esquema)", { identificador: "Apto D104", torre: "", coeficiente: "4.167", areaM2: "70" }, "rechaza"],
+    // La torre es opcional: sin torre se guarda "" y la UI la muestra como "Sin torre".
+    ["sin torre (esquema)", { identificador: "Apto D104", torre: "", coeficiente: "4.167", areaM2: "70" }, "acepta"],
     ["área con letras", { identificador: "Apto D105", torre: "Torre D", coeficiente: "4.167", areaM2: "70m2" }, "rechaza"],
   ];
   for (const [nombre, fila, esperado] of casos) {

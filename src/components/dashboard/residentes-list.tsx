@@ -4,7 +4,7 @@ import type {
   ResidenteHistorico,
 } from "@/lib/data/residentes";
 import { EstadoVacio, Etiqueta } from "@/components/ui/primitivos";
-import { formatearFecha } from "@/lib/formatters";
+import { formatearFecha, unidadConTorre } from "@/lib/formatters";
 
 const ETIQUETAS_ROL: Record<string, string> = {
   PROPIETARIO: "Propietario",
@@ -43,7 +43,7 @@ export function ResidentesList({ residentes }: { residentes: ResidenteConDetalle
               {residente.usuario.telefono ? ` · ${residente.usuario.telefono}` : ""}
             </p>
             <p className="mt-0.5 text-xs text-zinc-500">
-              {residente.inmueble.identificador} — {residente.inmueble.torre} ·
+              {unidadConTorre(residente.inmueble.identificador, residente.inmueble.torre, "guion")} ·
               vinculado desde {formatearFecha(residente.fechaInicio)}
             </p>
           </div>
@@ -84,7 +84,7 @@ export function ResidentesHistoricosList({
             </p>
             <p className="truncate text-xs text-zinc-500">
               {ETIQUETAS_ROL[residente.rol] ?? residente.rol} ·{" "}
-              {residente.inmueble.identificador} — {residente.inmueble.torre}
+              {unidadConTorre(residente.inmueble.identificador, residente.inmueble.torre, "guion")}
             </p>
           </div>
           <p className="shrink-0 text-xs text-zinc-500">

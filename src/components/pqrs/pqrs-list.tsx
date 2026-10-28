@@ -7,7 +7,7 @@ import { CrearOrdenForm } from "@/components/prestadores/crear-orden-form";
 import { FormPanel } from "@/components/ui/form-panel";
 import { EstadoVacio, Etiqueta } from "@/components/ui/primitivos";
 import { ETIQUETAS_ESTADO_ORDEN } from "@/lib/validations/prestadores";
-import { formatearFecha } from "@/lib/formatters";
+import { formatearFecha, unidadConTorre } from "@/lib/formatters";
 
 const ETIQUETAS_TIPO: Record<string, string> = {
   PETICION: "Petición",
@@ -56,7 +56,7 @@ export function PqrsList({
               <h3 className="font-semibold text-zinc-900">{pqrs.titulo}</h3>
               <p className="mt-0.5 text-xs text-zinc-500">
                 {ETIQUETAS_TIPO[pqrs.tipo] ?? pqrs.tipo} ·{" "}
-                {pqrs.inmueble.identificador} ({pqrs.inmueble.torre}) · radicada
+                {unidadConTorre(pqrs.inmueble.identificador, pqrs.inmueble.torre)} · radicada
                 por {pqrs.radicadoPor.nombre}
                 {pqrs.dirigidoA ? ` · dirigida a ${pqrs.dirigidoA.nombre}` : ""} ·{" "}
                 {formatearFecha(pqrs.createdAt)}

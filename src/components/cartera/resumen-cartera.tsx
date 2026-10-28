@@ -2,7 +2,7 @@ import { AlertTriangle, Landmark, TrendingUp, Wallet } from "lucide-react";
 import type { CarteraTorre, ResumenCartera } from "@/lib/data/cartera";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { BarraProgreso, Tarjeta } from "@/components/ui/primitivos";
-import { formatearMoneda, formatearPeriodo } from "@/lib/formatters";
+import { formatearMoneda, formatearPeriodo, etiquetaTorre } from "@/lib/formatters";
 
 /** Cifra en millones abreviada, para que un KPI quepa en una tarjeta de móvil. */
 function montoCorto(valor: number): string {
@@ -122,13 +122,17 @@ export function CarteraPorTorre({ torres }: { torres: CarteraTorre[] }) {
         <p className="mt-4 text-sm text-zinc-500">
           Todavía no hay unidades registradas.
         </p>
+      ) : torres.length === 1 && torres[0].torre === "" ? (
+        <p className="mt-4 text-sm text-zinc-500">
+          Esta copropiedad no tiene torres definidas, así que no hay distribución por torre.
+        </p>
       ) : (
         <ul className="mt-4 flex flex-col gap-3">
           {torres.map((torre) => (
             <li key={torre.torre} className="flex flex-col gap-1.5">
               <div className="flex items-baseline justify-between gap-3 text-sm">
                 <span className="truncate font-medium text-zinc-800">
-                  {torre.torre}
+                  {etiquetaTorre(torre.torre)}
                 </span>
                 <span className="shrink-0 tabular-nums text-zinc-900">
                   {formatearMoneda(torre.saldoTotal)}
@@ -137,7 +141,7 @@ export function CarteraPorTorre({ torres }: { torres: CarteraTorre[] }) {
               <BarraProgreso
                 porcentaje={torre.porcentajeDeCartera}
                 tono={torre.saldoVencido > 0 ? "peligro" : "marca"}
-                etiquetaAccesible={`${torre.torre}: ${Math.round(
+                etiquetaAccesible={`${etiquetaTorre(torre.torre)}: ${Math.round(
                   torre.porcentajeDeCartera
                 )}% de la cartera`}
               />

@@ -13,6 +13,7 @@ import { FILA_CSV_ESPERADA } from "@/lib/validations/cartera";
 import { ESTADO_INICIAL_IMPORTACION } from "@/lib/types/importacion";
 import { CLASES_CONTROL, CLASES_TEXTAREA, Campo, MensajeAccion } from "@/components/ui/formulario";
 import { Etiqueta } from "@/components/ui/primitivos";
+import { etiquetaTorre } from "@/lib/formatters";
 
 const EJEMPLO = `${FILA_CSV_ESPERADA},estado
 Apto 101,Torre 1,4.167,72.50,OCUPADO
@@ -211,7 +212,7 @@ export function ImportarUnidadesForm() {
                 className="flex items-center justify-between gap-2 px-3 py-2"
               >
                 <span className="truncate text-zinc-800">
-                  {fila.identificador} · {fila.torre} · coef {fila.coeficientePorcentaje} %
+                  {fila.identificador} · {etiquetaTorre(fila.torre)} · coef {fila.coeficientePorcentaje} %
                   {fila.areaM2 ? ` · ${fila.areaM2} m²` : ""}
                   {fila.estado === "DESOCUPADO" ? " · desocupada" : ""}
                 </span>

@@ -82,7 +82,7 @@ export function UnidadForm({
           etiqueta="Torre (opcional)"
           htmlFor={idTorre}
           error={estado.errores?.torre?.[0]}
-          ayuda='Si la dejas vacía se usa "Torre 1".'
+          ayuda='Si la dejas vacía, la unidad queda como "Sin torre".'
         >
           <input
             id={idTorre}

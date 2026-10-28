@@ -83,6 +83,7 @@ import {
   Td,
   Th,
 } from "@/components/ui/primitivos";
+import { etiquetaTorre, TORRE_VACIA_PARAM } from "@/lib/formatters";
 
 /**
  * Las subpáginas del dashboard viven en una sola ruta dinámica en vez de
@@ -192,6 +193,9 @@ async function SeccionCartera({
 }) {
   const unidadId = leerParam(searchParams, "unidad");
   const torre = leerParam(searchParams, "torre");
+  // "sin-torre" en la URL = unidades con torre "" (el filtro vacío ya significa "todas").
+  const torreFiltro = torre === TORRE_VACIA_PARAM ? "" : torre;
+  const hayTorres = !(copropiedad.torres.length === 1 && copropiedad.torres[0].nombre === "");
   const situacionParam = leerParam(searchParams, "situacion");
   const situacion = SITUACIONES.some((item) => item.valor === situacionParam)
     ? situacionParam
@@ -231,20 +235,25 @@ async function SeccionCartera({
       </Suspense>
 
       <div className="flex flex-col gap-3">
-        <FilaFiltros etiquetaAccesible="Filtrar por torre">
-          <FiltroPill href={hrefCon({ torre: undefined })} activo={!torre}>
-            Todas las torres
-          </FiltroPill>
-          {copropiedad.torres.map((item) => (
-            <FiltroPill
-              key={item.nombre}
-              href={hrefCon({ torre: item.nombre })}
-              activo={torre === item.nombre}
-            >
-              {item.nombre} ({item.unidades})
+        {hayTorres ? (
+          <FilaFiltros etiquetaAccesible="Filtrar por torre">
+            <FiltroPill href={hrefCon({ torre: undefined })} activo={!torre}>
+              Todas las torres
             </FiltroPill>
-          ))}
-        </FilaFiltros>
+            {copropiedad.torres.map((item) => {
+              const valor = item.nombre === "" ? TORRE_VACIA_PARAM : item.nombre;
+              return (
+                <FiltroPill
+                  key={valor}
+                  href={hrefCon({ torre: valor })}
+                  activo={torre === valor}
+                >
+                  {etiquetaTorre(item.nombre)} ({item.unidades})
+                </FiltroPill>
+              );
+            })}
+          </FilaFiltros>
+        ) : null}
 
         <FilaFiltros etiquetaAccesible="Filtrar por situación de cartera">
           {SITUACIONES.map((item) => (
@@ -262,7 +271,7 @@ async function SeccionCartera({
       <Suspense fallback={<Skeleton className="h-64" />}>
         <ListaUnidades
           copropiedadId={copropiedad.id}
-          torre={torre}
+          torre={torreFiltro}
           situacion={situacion}
           sufijoLista={sufijoLista}
         />
@@ -380,7 +389,7 @@ async function SeccionUnidades({ copropiedad }: { copropiedad: CopropiedadActiva
                 {unidades.map((unidad) => (
                   <tr key={unidad.id}>
                     <Td className="font-medium text-zinc-900">{unidad.identificador}</Td>
-                    <Td>{unidad.torre}</Td>
+                    <Td>{etiquetaTorre(unidad.torre)}</Td>
                     <Td className="text-right tabular-nums">{unidad.coeficiente} %</Td>
                     <Td className="text-right tabular-nums">{unidad.areaM2 || "—"}</Td>
                     <Td>

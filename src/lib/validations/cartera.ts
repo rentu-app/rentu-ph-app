@@ -81,7 +81,8 @@ export const filaUnidadSchema = z.object({
     .trim()
     .min(1, "El identificador es obligatorio")
     .max(60, "Máximo 60 caracteres"),
-  torre: z.string().trim().min(1, "La torre es obligatoria").max(60, "Máximo 60 caracteres"),
+  // Opcional: sin torre se guarda "" (se muestra como "Sin torre").
+  torre: z.string().trim().max(60, "Máximo 60 caracteres"),
   // El valor (porcentaje o fracción) se valida y convierte en
   // `convertirCoeficiente` (src/lib/coeficientes.ts), porque el formato se
   // decide mirando la suma de TODO el archivo, no una fila sola.

@@ -2,7 +2,7 @@ import type { ReservaConDetalle } from "@/lib/data/reservas";
 import { EstadoReservaBadge } from "@/components/reservas/estado-reserva-badge";
 import { GestionarReservaForm } from "@/components/reservas/gestionar-reserva-form";
 import { EstadoVacio } from "@/components/ui/primitivos";
-import { formatearFechaLarga, formatearHora } from "@/lib/formatters";
+import { formatearFechaLarga, formatearHora, unidadConTorre } from "@/lib/formatters";
 
 function agruparPorDia(reservas: ReservaConDetalle[]) {
   const grupos = new Map<string, ReservaConDetalle[]>();
@@ -47,7 +47,7 @@ export function AgendaReservas({ reservas }: { reservas: ReservaConDetalle[] }) 
                     {reserva.zonaComun.nombre}
                   </p>
                   <p className="text-xs text-zinc-500">
-                    {reserva.inmueble.identificador} ({reserva.inmueble.torre}) ·
+                    {unidadConTorre(reserva.inmueble.identificador, reserva.inmueble.torre)} ·
                     solicitó {reserva.solicitadaPor.nombre}
                   </p>
                   {reserva.observaciones ? (

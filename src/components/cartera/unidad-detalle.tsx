@@ -73,7 +73,7 @@ export function UnidadDetalle({
               {unidad.identificador}
             </h1>
             <p className="mt-1 text-sm text-zinc-500">
-              {unidad.torre} · coeficiente {unidad.coeficiente.toFixed(5)}
+              {unidad.torre ? `${unidad.torre} · ` : ""}coeficiente {unidad.coeficiente.toFixed(5)}
               {unidad.areaM2 ? ` · ${unidad.areaM2} m²` : ""} ·{" "}
               {unidad.estado === "OCUPADO" ? "Ocupada" : "Desocupada"}
             </p>
