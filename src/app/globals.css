@@ -145,3 +145,59 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Tour guiado (driver.js): popover legible en móvil, botones de 44 px. */
+.driver-popover.rentu-tour {
+  max-width: min(22rem, calc(100vw - 2rem));
+  border-radius: 0.75rem;
+  padding: 1rem;
+  font-family: inherit;
+}
+.driver-popover.rentu-tour .driver-popover-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #18181b;
+}
+.driver-popover.rentu-tour .driver-popover-description {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #52525b;
+}
+.driver-popover.rentu-tour .driver-popover-footer {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.driver-popover.rentu-tour .driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: #71717a;
+}
+.driver-popover.rentu-tour .driver-popover-footer button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 0.9rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-shadow: none;
+}
+.driver-popover.rentu-tour .driver-popover-next-btn {
+  background: var(--color-brand-600);
+  border-color: var(--color-brand-600);
+  color: #fff;
+}
+.rentu-tour-saltar {
+  margin-right: auto;
+  border: 0;
+  background: transparent;
+  color: #71717a;
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  .driver-popover.rentu-tour,
+  .driver-overlay,
+  .driver-active-element {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -17,11 +17,23 @@ export const COOKIE_COPROPIEDAD_ACTIVA = "rentu_copropiedad_activa";
  * sesión antes de llegar aquí, pero se revalida por si esta función se
  * invoca desde algún contexto que el Proxy no cubra.
  */
-const getUsuarioActual = cache(async () => {
+/** Una sola llamada a Supabase Auth por request (React `cache`). */
+const getUsuarioSupabase = cache(async () => {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  return user;
+});
+
+/** ¿Ya vio el tour? Vive en `user_metadata.tour_visto` de Supabase Auth (no en la base de Prisma). */
+export const getTourVisto = cache(async () => {
+  const user = await getUsuarioSupabase();
+  return user?.user_metadata?.tour_visto === true;
+});
+
+const getUsuarioActual = cache(async () => {
+  const user = await getUsuarioSupabase();
 
   if (!user?.email) {
     redirect("/login");

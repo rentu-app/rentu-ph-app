@@ -2,7 +2,9 @@ import { Logo } from "@/components/ui/logo";
 import Link from "next/link";
 import { ArrowLeftRight, MapPin } from "lucide-react";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
-import { getContextoAdministrador } from "@/lib/session";
+import { esCuentaDemo } from "@/lib/demo";
+import { TourGuiado } from "@/components/dashboard/tour-guiado";
+import { getContextoAdministrador, getTourVisto } from "@/lib/session";
 
 /**
  * Shell del área de administración.
@@ -23,7 +25,9 @@ import { getContextoAdministrador } from "@/lib/session";
 export default async function DashboardLayout({
   children,
 }: LayoutProps<"/dashboard">) {
-  const { copropiedad } = await getContextoAdministrador();
+  const { administrador, copropiedad } = await getContextoAdministrador();
+  // El tour se lanza solo la primera vez; nunca para la cuenta demo (compartida).
+  const lanzarTour = !(await getTourVisto()) && !esCuentaDemo(administrador.email);
 
   return (
     <div className="min-h-full bg-zinc-50">
@@ -49,6 +53,7 @@ export default async function DashboardLayout({
             </div>
             <Link
               href="/seleccionar-copropiedad"
+              data-tour="cambiar-copropiedad"
               className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-md border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 sm:min-h-9"
             >
               <ArrowLeftRight className="h-4 w-4" />
@@ -59,6 +64,8 @@ export default async function DashboardLayout({
           <DashboardNav />
         </div>
       </header>
+
+      <TourGuiado autoLanzar={lanzarTour} />
 
       <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(3rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-8">
         {children}
