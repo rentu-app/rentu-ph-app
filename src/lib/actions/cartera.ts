@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { Prisma, TipoGestionCobro } from "@prisma/client";
+import { EtapaCobro, Prisma, TipoGestionCobro } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { procesarCsvUnidades } from "@/lib/csv-unidades";
-import { operacionesReactivarUnidad } from "@/lib/unidades-escritura";
+import { superaLimiteTotal } from "@/lib/coeficientes";
+import { calcularEtapasReactivacion, operacionesReactivarUnidad } from "@/lib/unidades-escritura";
 import { getContextoAdministrador } from "@/lib/session";
 import {
   importarUnidadesSchema,
@@ -224,6 +225,9 @@ export async function importarUnidadesCsv(
 ): Promise<ResultadoImportacion> {
   const contenidoCrudo = String(formData.get("contenido") ?? "");
   const confirmar = formData.get("confirmar") === "true";
+  const formatoPedido = formData.get("formato");
+  const formatoForzado =
+    formatoPedido === "porcentaje" || formatoPedido === "fraccion" ? formatoPedido : undefined;
 
   // Antes se perdía el contenido en silencio y la confirmación terminaba en 0
   // filas: ahora un contenido vacío es siempre un error explícito.
@@ -255,15 +259,15 @@ export async function importarUnidadesCsv(
     const { copropiedad } = await getContextoAdministrador();
     if (!copropiedad) return SIN_COPROPIEDAD;
 
-    const procesado = procesarCsvUnidades(contenido);
+    const procesado = procesarCsvUnidades(contenido, formatoForzado);
     if ("error" in procesado) {
       return { status: "error", message: procesado.error };
     }
-    const { erroresFila, formato, sumaPorcentaje, tieneEstado } = procesado;
+    const { erroresFila, formato, formatoDetectado, sumaPorcentaje, tieneEstado } = procesado;
 
     const existentes = await prisma.inmueble.findMany({
       where: { copropiedadId: copropiedad.id },
-      select: { id: true, identificador: true, deletedAt: true },
+      select: { id: true, identificador: true, deletedAt: true, coeficiente: true },
     });
     const porIdentificador = new Map(
       existentes.map((unidad) => [unidad.identificador, unidad])
@@ -274,21 +278,38 @@ export async function importarUnidadesCsv(
       yaExiste: porIdentificador.get(fila.identificador)?.deletedAt === null,
     }));
 
+    // Suma total que tendría la copropiedad: lo que ya existe y NO se toca +
+    // lo que traería este archivo (las unidades que el archivo actualiza
+    // reemplazan su coeficiente anterior).
+    const idsDelArchivo = new Set(filasValidas.map((fila) => fila.identificador));
+    const sumaResultante = [
+      ...existentes
+        .filter((unidad) => unidad.deletedAt === null && !idsDelArchivo.has(unidad.identificador))
+        .map((unidad) => unidad.coeficiente),
+      ...filasValidas.map((fila) => new Prisma.Decimal(fila.coeficiente)),
+    ].reduce((acc, valor) => acc.plus(valor), new Prisma.Decimal(0));
+    const bloqueada = filasValidas.length > 0 && superaLimiteTotal(sumaResultante);
+    const sumaResultantePorcentaje = sumaResultante.mul(100).toFixed(3);
+    const textoBloqueo = `La suma total de la copropiedad quedaría en ${sumaResultantePorcentaje} % (lo que ya existe más este archivo), por encima de 100.001 %. Revisa que el formato de los coeficientes sea el correcto.`;
+
     const detalle = {
       formatoCoeficiente: formato,
+      formatoDetectado,
       sumaArchivoPorcentaje: sumaPorcentaje,
+      sumaResultantePorcentaje,
+      bloqueada,
       contenidoValidado: contenido,
     } as const;
-    const textoFormato =
-      formato === "porcentaje"
-        ? `Coeficientes interpretados como porcentaje (el archivo suma ${sumaPorcentaje} %).`
-        : `Coeficientes interpretados como fracción de 1 (el archivo suma ${sumaPorcentaje} %).`;
+    const textoFormato = `Coeficientes en ${
+      formato === "porcentaje" ? "porcentaje" : "fracción de 1"
+    }${formatoForzado ? " (elegido por ti)" : " (detectado)"}; el archivo suma ${sumaPorcentaje} %.`;
 
     if (!confirmar) {
       return {
-        status: filasValidas.length > 0 ? "success" : "error",
-        message:
-          filasValidas.length > 0
+        status: filasValidas.length > 0 && !bloqueada ? "success" : "error",
+        message: bloqueada
+          ? textoBloqueo
+          : filasValidas.length > 0
             ? `Vista previa: ${filasValidas.length} fila(s) válida(s), ${erroresFila.length} con error. ${textoFormato} Nada se ha guardado todavía.`
             : "Ninguna fila es válida. Revisa los errores y vuelve a intentar.",
         filasValidas,
@@ -308,6 +329,24 @@ export async function importarUnidadesCsv(
       };
     }
 
+    if (bloqueada) {
+      return {
+        status: "error",
+        message: `${textoBloqueo} No se guardó nada.`,
+        filasValidas,
+        erroresFila,
+        confirmado: false,
+        ...detalle,
+      };
+    }
+
+    const etapas = await calcularEtapasReactivacion(
+      filasValidas.flatMap((fila) => {
+        const existente = porIdentificador.get(fila.identificador);
+        return existente?.deletedAt ? [existente.id] : [];
+      })
+    );
+
     const operaciones = filasValidas.flatMap((fila) => {
       const datos = {
         torre: fila.torre,
@@ -319,7 +358,13 @@ export async function importarUnidadesCsv(
       // Una unidad borrada que vuelve en el CSV se reactiva como nueva (ver
       // `operacionesReactivarUnidad`); una activa solo actualiza sus datos.
       if (existente?.deletedAt) {
-        return [...operacionesReactivarUnidad(existente.id, { ...datos, estado: fila.estado })];
+        return [
+          ...operacionesReactivarUnidad(
+            existente.id,
+            etapas.get(existente.id) ?? EtapaCobro.AL_DIA,
+            { ...datos, estado: fila.estado }
+          ),
+        ];
       }
       return [
         prisma.inmueble.upsert({

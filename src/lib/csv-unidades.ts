@@ -67,14 +67,20 @@ export type ResultadoProcesoCsv =
   | {
       filasValidas: FilaProcesada[];
       erroresFila: { linea: number; mensaje: string }[];
+      /** Formato aplicado (el forzado por el usuario o, si no, el detectado). */
       formato: FormatoCoeficiente;
+      formatoDetectado: FormatoCoeficiente;
       /** Suma de la columna de coeficientes, ya expresada en porcentaje. */
       sumaPorcentaje: string;
       /** El CSV traía columna `estado` (si no, no se toca el estado al actualizar). */
       tieneEstado: boolean;
     };
 
-export function procesarCsvUnidades(contenido: string): ResultadoProcesoCsv {
+export function procesarCsvUnidades(
+  contenido: string,
+  /** Formato elegido por el usuario; si no viene se autodetecta por la suma. */
+  formatoForzado?: FormatoCoeficiente
+): ResultadoProcesoCsv {
   const lineas = contenido
     .split(/\r?\n/)
     .map((texto, indice) => ({ linea: indice + 1, texto: texto.trim() }))
@@ -149,7 +155,9 @@ export function procesarCsvUnidades(contenido: string): ResultadoProcesoCsv {
     return { linea: fila.linea, valores };
   });
 
-  const { formato, suma } = detectarFormato(celdas.map((c) => c.valores.coeficiente ?? ""));
+  const detectado = detectarFormato(celdas.map((c) => c.valores.coeficiente ?? ""));
+  const formato = formatoForzado ?? detectado.formato;
+  const suma = detectado.suma;
   const tieneEstado = orden.includes("estado");
 
   const erroresFila: { linea: number; mensaje: string }[] = [];
@@ -204,5 +212,12 @@ export function procesarCsvUnidades(contenido: string): ResultadoProcesoCsv {
   }
 
   const sumaPorcentaje = (formato === "porcentaje" ? suma : suma.mul(100)).toFixed(3);
-  return { filasValidas, erroresFila, formato, sumaPorcentaje, tieneEstado };
+  return {
+    filasValidas,
+    erroresFila,
+    formato,
+    formatoDetectado: detectado.formato,
+    sumaPorcentaje,
+    tieneEstado,
+  };
 }

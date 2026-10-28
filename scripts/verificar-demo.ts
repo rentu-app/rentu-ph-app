@@ -8,6 +8,7 @@
  *
  * Es de solo lectura: no escribe nada en la base.
  */
+import { Prisma } from "@prisma/client";
 import { prisma } from "../src/lib/prisma";
 import { resolverCopropiedadActiva } from "../src/lib/data/copropiedad";
 import {
@@ -19,6 +20,8 @@ import {
 } from "../src/lib/data/cartera";
 import { existeCruceDeHorario, inmuebleNoEstaAPazYSalvo } from "../src/lib/data/reservas";
 import { filaUnidadSchema } from "../src/lib/validations/cartera";
+import { superaLimiteTotal } from "../src/lib/coeficientes";
+import { procesarCsvUnidades } from "../src/lib/csv-unidades";
 
 const pesos = (valor: number) =>
   `$${valor.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`;
@@ -29,7 +32,10 @@ async function main() {
     select: { id: true },
   });
 
-  const { copropiedad } = await resolverCopropiedadActiva(admin.id, undefined);
+  // La demo puede tener más de una copropiedad vinculada: se verifica la del seed.
+  const { copropiedades } = await resolverCopropiedadActiva(admin.id, undefined);
+  const copropiedad =
+    copropiedades.find((item) => item.nombre.includes("Altos de Salitre")) ?? copropiedades[0];
   if (!copropiedad) throw new Error("El administrador demo no tiene copropiedad activa.");
 
   console.log(`\n=== ${copropiedad.nombre} ===`);
@@ -137,23 +143,69 @@ async function main() {
   }
 
   console.log(`\n--- Validación de filas del CSV de unidades ---`);
-  const casos: [string, Record<string, string>][] = [
-    ["válida", { identificador: "Apto D101", torre: "Torre D", coeficiente: "0.04167", areaM2: "70.00" }],
-    ["sin área", { identificador: "Apto D102", torre: "Torre D", coeficiente: "0.04167", areaM2: "" }],
-    ["coeficiente en %", { identificador: "Apto D103", torre: "Torre D", coeficiente: "4.167", areaM2: "70" }],
-    ["sin torre", { identificador: "Apto D104", torre: "", coeficiente: "0.04167", areaM2: "70" }],
-    ["área con letras", { identificador: "Apto D105", torre: "Torre D", coeficiente: "0.04167", areaM2: "70m2" }],
+  // `filaUnidadSchema` valida identificador, torre y área; el coeficiente
+  // (porcentaje o fracción) se valida aparte, en `convertirCoeficiente`.
+  // Cada caso declara su resultado esperado y el script marca ✓ / ✗.
+  const casos: [string, Record<string, string>, "acepta" | "rechaza"][] = [
+    ["válida", { identificador: "Apto D101", torre: "Torre D", coeficiente: "4.167", areaM2: "70.00" }, "acepta"],
+    ["sin área", { identificador: "Apto D102", torre: "Torre D", coeficiente: "4.167", areaM2: "" }, "acepta"],
+    // El esquema ya NO rechaza un coeficiente en %: cualquier valor no vacío
+    // pasa y la conversión decide (ver sección siguiente).
+    ["coeficiente en %", { identificador: "Apto D103", torre: "Torre D", coeficiente: "4.167", areaM2: "70" }, "acepta"],
+    // El esquema exige torre; el importador la rellena con "Torre 1" antes de validar.
+    ["sin torre (esquema)", { identificador: "Apto D104", torre: "", coeficiente: "4.167", areaM2: "70" }, "rechaza"],
+    ["área con letras", { identificador: "Apto D105", torre: "Torre D", coeficiente: "4.167", areaM2: "70m2" }, "rechaza"],
   ];
-  for (const [nombre, fila] of casos) {
+  for (const [nombre, fila, esperado] of casos) {
     const resultado = filaUnidadSchema.safeParse(fila);
+    const obtenido = resultado.success ? "acepta" : "rechaza";
     console.log(
-      `${nombre.padEnd(18)} → ${
+      `${obtenido === esperado ? "✓" : "✗"} ${nombre.padEnd(22)} → ${obtenido} (esperado ${esperado})${
         resultado.success
-          ? "acepta"
-          : `rechaza (${resultado.error.issues.map((issue) => issue.message).join(" | ")})`
+          ? ""
+          : ` [${resultado.error.issues.map((issue) => issue.message).join(" | ")}]`
       }`
     );
   }
+
+  console.log(`\n--- Formato de coeficientes del CSV (porcentaje vs fracción) ---`);
+  const comprobar = (nombre: string, ok: boolean, detalle: string) =>
+    console.log(`${ok ? "✓" : "✗"} ${nombre.padEnd(38)} → ${detalle}`);
+
+  const enPorcentaje = procesarCsvUnidades("identificador,coeficiente\nApto D1,4.167\nApto D2,95.833");
+  if ("error" in enPorcentaje) throw new Error(enPorcentaje.error);
+  comprobar(
+    "coeficiente en % (suma 100)",
+    enPorcentaje.formato === "porcentaje" && enPorcentaje.filasValidas[0].coeficiente === "0.04167",
+    `${enPorcentaje.formato}, 4.167 → ${enPorcentaje.filasValidas[0].coeficiente} (esperado porcentaje, 0.04167)`
+  );
+
+  // Archivo parcial de una copropiedad grande: 20 unidades de 0.658 % cada una.
+  // Ningún valor > 1 y la suma (13.16) no es ni ≈1 ni ≈100, así que la
+  // autodetección lo lee como FRACCIÓN y cada unidad quedaría en 65.8 %. Es la
+  // limitación conocida; por eso la UI permite elegir el formato a mano y
+  // bloquea si la copropiedad quedaría por encima de 100.001 %.
+  const parcial = "identificador,coeficiente\n" +
+    Array.from({ length: 20 }, (_, i) => `Apto P${i + 1},0.658`).join("\n");
+  const auto = procesarCsvUnidades(parcial);
+  const forzado = procesarCsvUnidades(parcial, "porcentaje");
+  if ("error" in auto || "error" in forzado) throw new Error("El CSV parcial no debería fallar");
+  comprobar(
+    "parcial 20×0.658 · autodetección",
+    auto.formato === "fraccion" && auto.filasValidas[0].coeficiente === "0.65800",
+    `${auto.formato}, cada unidad → ${auto.filasValidas[0].coeficientePorcentaje} % (esperado fraccion, 65.800 %)`
+  );
+  const sumaAuto = auto.filasValidas.reduce((acc, f) => acc.plus(f.coeficiente), new Prisma.Decimal(0));
+  comprobar(
+    "parcial 20×0.658 · bloqueo por suma",
+    superaLimiteTotal(sumaAuto),
+    `suma ${sumaAuto.mul(100).toFixed(3)} % > 100.001 % → importación bloqueada (esperado: bloqueada)`
+  );
+  comprobar(
+    "parcial 20×0.658 · formato elegido %",
+    forzado.formato === "porcentaje" && forzado.filasValidas[0].coeficiente === "0.00658",
+    `${forzado.formato}, cada unidad → ${forzado.filasValidas[0].coeficientePorcentaje} % (esperado porcentaje, 0.658 %)`
+  );
 
   const suma = await prisma.inmueble.aggregate({
     where: { copropiedadId: copropiedad.id, deletedAt: null },

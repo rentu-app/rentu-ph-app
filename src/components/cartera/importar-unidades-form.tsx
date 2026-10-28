@@ -19,6 +19,8 @@ Apto 101,Torre 1,4.167,72.50,OCUPADO
 Apto 102,Torre 1,4.167,72.50,OCUPADO
 Apto 201,Torre 2,4.167,68.00,DESOCUPADO`;
 
+type FormatoElegido = "porcentaje" | "fraccion";
+
 const BOTON =
   "inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-md px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto";
 
@@ -47,18 +49,28 @@ export function ImportarUnidadesForm() {
   );
   const [contenido, setContenido] = useState("");
   const [nombreArchivo, setNombreArchivo] = useState("");
+  // Formato elegido a mano; null = el que detectó el servidor.
+  const [formatoManual, setFormatoManual] = useState<FormatoElegido | null>(null);
   const idArchivo = useId();
   const idContenido = useId();
+  const idFormato = useId();
 
   // Tras una importación exitosa el campo se muestra vacío y se descarta la
   // vista previa; en cuanto el usuario escribe algo distinto vuelve a la normalidad.
   const yaImportado = !!estado.confirmado && estado.contenidoValidado === contenido;
   const contenidoVisible = yaImportado ? "" : contenido;
 
-  const hayVistaPrevia =
-    !estado.confirmado &&
-    (estado.filasValidas?.length ?? 0) > 0 &&
-    estado.contenidoValidado === contenido;
+  // Hay un resultado de validación vigente para el texto que se ve en pantalla.
+  const hayResultado =
+    !estado.confirmado && !!estado.formatoCoeficiente && estado.contenidoValidado === contenido;
+  const hayFilas = hayResultado && (estado.filasValidas?.length ?? 0) > 0;
+  const formatoMostrado = formatoManual ?? estado.formatoCoeficiente ?? "porcentaje";
+  // Solo se puede confirmar lo que se revisó: mismo texto, mismo formato, y
+  // sin que la suma total de la copropiedad pase de 100.001 %.
+  const puedeConfirmar =
+    hayFilas &&
+    !estado.bloqueada &&
+    (formatoManual === null || formatoManual === estado.formatoCoeficiente);
 
   async function alElegirArchivo(evento: ChangeEvent<HTMLInputElement>) {
     const archivo = evento.target.files?.[0];
@@ -71,16 +83,29 @@ export function ImportarUnidadesForm() {
     }
     setContenido(await archivo.text());
     setNombreArchivo(archivo.name);
+    setFormatoManual(null);
+  }
+
+  function enviar(confirmar: boolean, formato: FormatoElegido | null) {
+    const datos = new FormData();
+    // Lo que el usuario ve: tras importar el campo se muestra vacío.
+    datos.set("contenido", contenidoVisible);
+    datos.set("confirmar", confirmar ? "true" : "false");
+    datos.set("formato", formato ?? "auto");
+    startTransition(() => accion(datos));
   }
 
   function alEnviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     const submitter = (evento.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
-    const datos = new FormData();
-    // Lo que el usuario ve: tras importar el campo se muestra vacío.
-    datos.set("contenido", contenidoVisible);
-    datos.set("confirmar", submitter?.value === "true" ? "true" : "false");
-    startTransition(() => accion(datos));
+    enviar(submitter?.value === "true", formatoManual);
+  }
+
+  /** Cambiar el formato recalcula la vista previa con el nuevo formato. */
+  function alCambiarFormato(evento: ChangeEvent<HTMLSelectElement>) {
+    const formato = evento.target.value as FormatoElegido;
+    setFormatoManual(formato);
+    enviar(false, formato);
   }
 
   return (
@@ -118,6 +143,7 @@ export function ImportarUnidadesForm() {
           onChange={(evento) => {
             setContenido(evento.target.value);
             setNombreArchivo("");
+            setFormatoManual(null);
           }}
           placeholder={EJEMPLO}
           className={`${CLASES_TEXTAREA} font-mono text-xs`}
@@ -141,17 +167,39 @@ export function ImportarUnidadesForm() {
         </div>
       ) : null}
 
-      {hayVistaPrevia && estado.filasValidas ? (
+      {hayResultado ? (
+        <div className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-3">
+          <label htmlFor={idFormato} className="text-xs font-medium text-zinc-600">
+            Los coeficientes están en:
+          </label>
+          <select
+            id={idFormato}
+            value={formatoMostrado}
+            onChange={alCambiarFormato}
+            disabled={pendiente}
+            className={CLASES_CONTROL}
+          >
+            <option value="porcentaje">Porcentaje (ej. 4.167)</option>
+            <option value="fraccion">Fracción de 1 (ej. 0.04167)</option>
+          </select>
+          <p className="text-xs text-zinc-500">
+            Detectado: {estado.formatoDetectado === "fraccion" ? "fracción" : "porcentaje"}. Si
+            tu archivo trae solo algunas unidades, la detección puede equivocarse: cámbialo aquí y
+            la vista previa se recalcula.
+          </p>
+        </div>
+      ) : null}
+
+      {hayFilas && estado.filasValidas ? (
         <div className="rounded-lg border border-zinc-200">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 px-3 py-2">
             <p className="text-xs font-semibold text-zinc-700">
               Vista previa ({estado.filasValidas.length})
             </p>
             <div className="flex flex-wrap items-center gap-1.5">
-              <Etiqueta tono="info">
-                Coeficientes en{" "}
-                {estado.formatoCoeficiente === "fraccion" ? "fracción" : "porcentaje"} · suma{" "}
-                {estado.sumaArchivoPorcentaje} %
+              <Etiqueta tono={estado.bloqueada ? "peligro" : "info"}>
+                Archivo {estado.sumaArchivoPorcentaje} % · copropiedad quedaría en{" "}
+                {estado.sumaResultantePorcentaje} %
               </Etiqueta>
               <Etiqueta tono="alerta">Nada se ha guardado todavía</Etiqueta>
             </div>
@@ -189,7 +237,7 @@ export function ImportarUnidadesForm() {
           {pendiente ? "Procesando…" : "Validar sin guardar"}
         </button>
 
-        {hayVistaPrevia ? (
+        {puedeConfirmar ? (
           <button
             type="submit"
             value="true"

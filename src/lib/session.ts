@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { RolUsuario } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { esCuentaDemo } from "@/lib/demo";
 import { resolverCopropiedadActiva } from "@/lib/data/copropiedad";
 
 export const COOKIE_INMUEBLE_ACTIVO = "rentu_inmueble_activo";
@@ -71,8 +70,7 @@ export async function getContextoAdministrador() {
   const { copropiedad, copropiedades, requiereSeleccion } =
     await resolverCopropiedadActiva(
       administrador.id,
-      cookieStore.get(COOKIE_COPROPIEDAD_ACTIVA)?.value,
-      esCuentaDemo(administrador.email)
+      cookieStore.get(COOKIE_COPROPIEDAD_ACTIVA)?.value
     );
 
   if (requiereSeleccion) {

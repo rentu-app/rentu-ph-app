@@ -27,6 +27,12 @@ export type ResultadoImportacion = EstadoAccionFormulario & {
   /** Cómo se interpretó la columna de coeficientes y cuánto suma el archivo. */
   formatoCoeficiente?: "porcentaje" | "fraccion";
   sumaArchivoPorcentaje?: string;
+  /** Lo que habría elegido la autodetección (puede diferir del aplicado). */
+  formatoDetectado?: "porcentaje" | "fraccion";
+  /** Suma total de la copropiedad si se aplicara la importación. */
+  sumaResultantePorcentaje?: string;
+  /** true si esa suma supera 100.001 %: la importación queda bloqueada. */
+  bloqueada?: boolean;
   /**
    * El contenido exacto que el servidor validó. La UI lo compara con lo que
    * hay en pantalla para no ofrecer "Confirmar" sobre un texto distinto del

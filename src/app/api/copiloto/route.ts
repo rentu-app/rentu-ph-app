@@ -3,7 +3,6 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { cookies } from "next/headers";
 import { COOKIE_COPROPIEDAD_ACTIVA, getAdministradorActual } from "@/lib/session";
 import { resolverCopropiedadActiva } from "@/lib/data/copropiedad";
-import { esCuentaDemo } from "@/lib/demo";
 import { generarEmbedding } from "@/lib/ai/embeddings";
 import { buscarChunksRelevantes } from "@/lib/data/documentos-ph";
 
@@ -31,8 +30,7 @@ export async function POST(request: Request) {
   const cookieStore = await cookies();
   const { copropiedad: activa } = await resolverCopropiedadActiva(
     administrador.id,
-    cookieStore.get(COOKIE_COPROPIEDAD_ACTIVA)?.value,
-    esCuentaDemo(administrador.email)
+    cookieStore.get(COOKIE_COPROPIEDAD_ACTIVA)?.value
   );
   // Debe ser la copropiedad ACTIVA, no cualquiera de las del administrador.
   const copropiedad = activa?.id === copropiedadId ? activa : null;

@@ -89,6 +89,11 @@ export function detectarFormato(valores: string[]): {
   return { formato: hayMayorQueUno ? "porcentaje" : "fraccion", suma };
 }
 
+/** Una copropiedad no puede pasar de 100.001 % (100 % + tolerancia por redondeo). */
+export function superaLimiteTotal(sumaFraccion: Prisma.Decimal | string): boolean {
+  return new Prisma.Decimal(sumaFraccion).gt(new Prisma.Decimal(1).plus(TOLERANCIA_SUMA));
+}
+
 /** ¿La suma de fracciones es 100 % dentro de ±0.001 %? */
 export function sumaEsCompleta(sumaFraccion: Prisma.Decimal | string): boolean {
   return new Prisma.Decimal(sumaFraccion).minus(1).abs().lte(TOLERANCIA_SUMA);

@@ -7,7 +7,7 @@ import { RolUsuario } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { EMAIL_DEMO_ADMIN, esCuentaDemo } from "@/lib/demo";
+import { EMAIL_DEMO_ADMIN } from "@/lib/demo";
 import { COOKIE_COPROPIEDAD_ACTIVA } from "@/lib/session";
 import { hashPassword } from "@/lib/password";
 import { registrarAdministradorSchema } from "@/lib/validations/registro";
@@ -57,16 +57,15 @@ export async function iniciarSesion(
 
     const usuario = await prisma.usuario.findFirst({
       where: { email: validado.data.email, deletedAt: null },
-      select: { rol: true, email: true },
+      select: { rol: true },
     });
     destino = usuario?.rol === RolUsuario.ADMINISTRADOR ? "/dashboard" : "/portal";
 
-    // Todo administrador pasa por /seleccionar-copropiedad después del login,
-    // aunque tenga una sola. Excepción: la cuenta demo, que entra directo a
-    // Altos de Salitre.
+    // Todo administrador (la cuenta demo incluida) pasa por
+    // /seleccionar-copropiedad después del login, aunque tenga una sola.
     if (usuario?.rol === RolUsuario.ADMINISTRADOR) {
       await olvidarCopropiedadActiva();
-      if (!esCuentaDemo(usuario.email)) destino = "/seleccionar-copropiedad";
+      destino = "/seleccionar-copropiedad";
     }
 
     const destinoParam = formData.get("next");
@@ -112,7 +111,7 @@ export async function entrarComoDemo(): Promise<EstadoAccionLogin> {
     return { status: "error", message: "No se pudo entrar a la demo. Intenta de nuevo." };
   }
 
-  redirect("/dashboard");
+  redirect("/seleccionar-copropiedad");
 }
 
 export type EstadoAccionRegistro = EstadoAccionFormulario;
