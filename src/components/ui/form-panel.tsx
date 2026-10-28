@@ -1,8 +1,15 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 import { Plus } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
+
+const CerrarPanelContext = createContext<(() => void) | null>(null);
+
+/** Permite a un formulario dentro de un <FormPanel> cerrar su modal (p. ej. al guardar). */
+export function useCerrarPanel(): () => void {
+  return useContext(CerrarPanelContext) ?? (() => {});
+}
 
 /**
  * Patrón reutilizable "botón + modal" para cualquier formulario de creación:
@@ -31,6 +38,7 @@ export function FormPanel({
   children: ReactNode;
 }) {
   const [abierto, setAbierto] = useState(false);
+  const cerrar = useCallback(() => setAbierto(false), []);
 
   const estilosBoton =
     variant === "accent"
@@ -53,7 +61,9 @@ export function FormPanel({
         title={title}
         description={description}
       >
-        {children}
+        <CerrarPanelContext.Provider value={cerrar}>
+          {children}
+        </CerrarPanelContext.Provider>
       </Modal>
     </>
   );

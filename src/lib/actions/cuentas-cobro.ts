@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { EstadoCuenta, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { formatearPeriodo } from "@/lib/formatters";
 import { getContextoAdministrador } from "@/lib/session";
 import { generarCuentasDeCobroSchema } from "@/lib/validations/cuentas-cobro";
 import type { EstadoAccionFormulario } from "@/lib/types/estado-accion";
@@ -101,10 +102,12 @@ export async function generarCuentasDeCobroMensual(
     );
     const omitidos = unidades.length - unidadesAGenerar.length;
 
-    if (unidadesAGenerar.length === 0) {
+    // Si el periodo ya tiene cuentas (aunque sea de algunas unidades) no se
+    // genera nada: evita duplicar al repetir el envío o regenerar un periodo.
+    if (omitidos > 0) {
       return {
         status: "error",
-        message: `Ya existe una cuenta de cobro para el periodo ${periodo} en todas las unidades.`,
+        message: `Ya se generaron las cuentas de ${formatearPeriodo(periodo)}.`,
       };
     }
 
@@ -133,11 +136,9 @@ export async function generarCuentasDeCobroMensual(
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/cartera");
 
-    const mensajeOmitidos =
-      omitidos > 0 ? ` (${omitidos} ya tenían cuenta para ese periodo)` : "";
     return {
       status: "success",
-      message: `${unidadesAGenerar.length} cuenta(s) de cobro generada(s) para ${periodo}${mensajeOmitidos}.`,
+      message: `${unidadesAGenerar.length} cuenta(s) de cobro generada(s) para ${formatearPeriodo(periodo)}.`,
     };
   } catch (error) {
     console.error("generarCuentasDeCobroMensual", error);

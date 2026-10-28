@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { useActionState, useEffect, useId } from "react";
+import { useRouter } from "next/navigation";
+import { useCerrarPanel } from "@/components/ui/form-panel";
 import { generarCuentasDeCobroMensual } from "@/lib/actions/cuentas-cobro";
 import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
 import { BotonSubmit } from "@/components/ui/boton";
@@ -26,10 +28,20 @@ export function GenerarCuentasForm({ totalUnidades }: { totalUnidades: number })
     generarCuentasDeCobroMensual,
     ESTADO_INICIAL_ACCION
   );
+  const router = useRouter();
+  const cerrarPanel = useCerrarPanel();
   const idPeriodo = useId();
   const idMontoAdmin = useId();
   const idExpensas = useId();
   const idFechaLimite = useId();
+
+  // Al generar con éxito se cierra el modal y se refresca el dashboard
+  // (Primeros pasos, KPIs) sin recargar la página.
+  useEffect(() => {
+    if (estado.status !== "success") return;
+    cerrarPanel();
+    router.refresh();
+  }, [estado, cerrarPanel, router]);
 
   return (
     <form action={accion} className="flex flex-col gap-4">
@@ -60,7 +72,7 @@ export function GenerarCuentasForm({ totalUnidades }: { totalUnidades: number })
             type="date"
             required
             defaultValue={fechaLimiteSugerida()}
-            className={CLASES_CONTROL}
+            className={`${CLASES_CONTROL} w-full min-w-0 appearance-none`}
           />
         </Campo>
 
