@@ -13,6 +13,8 @@ import {
   getResumenCartera,
   getUnidadesPrioritarias,
 } from "@/lib/data/cartera";
+import { getProgresoPrimerosPasos } from "@/lib/data/primeros-pasos";
+import { PrimerosPasos } from "@/components/dashboard/primeros-pasos";
 import { getResumenPqrs } from "@/lib/data/pqrs";
 import { getReservasDeCopropiedad } from "@/lib/data/reservas";
 import {
@@ -61,6 +63,25 @@ export default async function DashboardPage() {
     );
   }
 
+  const progreso = await getProgresoPrimerosPasos(copropiedad.id);
+  const sinUnidades = copropiedad.totalUnidades === 0;
+  const completo = Object.values(progreso).every(Boolean);
+
+  // Sin unidades no hay cartera que medir: en vez de KPIs en 0 se muestra el
+  // checklist. Con unidades, el checklist convive con las métricas mientras
+  // falte algún paso y desaparece al completarlos.
+  if (sinUnidades) {
+    return (
+      <div className="flex flex-col gap-8">
+        <EncabezadoPagina
+          titulo={`Hola, ${administrador.nombre.split(" ")[0]}`}
+          descripcion={`Vamos a dejar lista ${copropiedad.nombre}.`}
+        />
+        <PrimerosPasos progreso={progreso} totalUnidades={copropiedad.totalUnidades} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <EncabezadoPagina
@@ -86,6 +107,10 @@ export default async function DashboardPage() {
           </div>
         }
       />
+
+      {completo ? null : (
+        <PrimerosPasos progreso={progreso} totalUnidades={copropiedad.totalUnidades} />
+      )}
 
       <Suspense fallback={<EsqueletoKpis />}>
         <BloqueCartera copropiedadId={copropiedad.id} />
