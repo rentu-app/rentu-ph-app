@@ -20,6 +20,8 @@ export function LoginForm({ next }: { next?: string }) {
           id={emailId}
           name="email"
           type="email"
+          autoCapitalize="none"
+          autoCorrect="off"
           required
           autoComplete="email"
           placeholder="admin@copropiedad.com"

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { emailSchema } from "@/lib/validations/email";
 import { EstadoOrdenServicio, TipoPrestador } from "@prisma/client";
 import { montoDecimalOpcionalSchema } from "@/lib/validations/dinero";
 
@@ -29,7 +30,7 @@ export const crearPrestadorSchema = z.object({
   contacto: textoOpcional(120),
   telefono: textoOpcional(30),
   // El correo es opcional, pero si viene tiene que ser válido.
-  email: z.union([z.email("Correo inválido"), z.literal("")]).optional(),
+  email: z.union([emailSchema("Correo inválido"), z.literal("")]).optional(),
   notas: textoOpcional(1000),
 });
 

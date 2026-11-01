@@ -65,7 +65,7 @@ export async function actualizarSesion(request: NextRequest) {
     // Puntual (solo en esta rama, no en cada request): decide a cuál área
     // manda a alguien que ya tiene sesión pero visita /login de nuevo.
     const usuario = await prisma.usuario.findFirst({
-      where: { email: user.email, deletedAt: null },
+      where: { email: { equals: user.email, mode: "insensitive" }, deletedAt: null },
       select: { rol: true },
     });
 

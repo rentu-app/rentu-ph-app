@@ -21,13 +21,14 @@ export async function eliminarMiCuenta(
   const confirmacion = z.string().safeParse(formData.get("email"));
   let destino = "/?cuenta=eliminada";
 
-  try {
-    const administrador = await getAdministradorActual();
+  // Fuera del try: si no hay sesión, su redirect no debe ser tragado.
+  const administrador = await getAdministradorActual();
 
+  try {
     if (esCuentaDemo(administrador.email)) {
       return { status: "error", message: "La cuenta demo no se puede eliminar." };
     }
-    if (!confirmacion.success || confirmacion.data.trim() !== administrador.email) {
+    if (!confirmacion.success || confirmacion.data.trim().toLowerCase() !== administrador.email.trim().toLowerCase()) {
       return {
         status: "error",
         message: "Revisa los datos del formulario.",

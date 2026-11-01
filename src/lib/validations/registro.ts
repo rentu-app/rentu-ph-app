@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { emailSchema } from "@/lib/validations/email";
 
 export const registrarAdministradorSchema = z.object({
   nombre: z.string().trim().min(2, "Escribe un nombre").max(120, "Máximo 120 caracteres"),
-  email: z.email("Ingresa un correo válido"),
+  email: emailSchema(),
   telefono: z.string().trim().max(30, "Máximo 30 caracteres").optional().or(z.literal("")),
   password: z.string().min(8, "Mínimo 8 caracteres"),
   copropiedadNombre: z

@@ -62,6 +62,8 @@ export function RegistroForm() {
             id={idEmail}
             name="email"
             type="email"
+            autoCapitalize="none"
+            autoCorrect="off"
             required
             autoComplete="email"
             className={CLASES_CONTROL}

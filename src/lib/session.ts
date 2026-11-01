@@ -40,7 +40,7 @@ const getUsuarioActual = cache(async () => {
   }
 
   const usuario = await prisma.usuario.findFirst({
-    where: { email: user.email, deletedAt: null },
+    where: { email: { equals: user.email, mode: "insensitive" }, deletedAt: null },
   });
 
   if (!usuario) {

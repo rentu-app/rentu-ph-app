@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { emailSchema } from "@/lib/validations/email";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { RolUsuario } from "@prisma/client";
@@ -24,8 +25,22 @@ async function olvidarCopropiedadActiva() {
   (await cookies()).delete(COOKIE_COPROPIEDAD_ACTIVA);
 }
 
+async function buscarUsuarioAuthPorEmail(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  email: string
+): Promise<string | null> {
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+    if (error || !data.users.length) return null;
+    const encontrado = data.users.find((u) => u.email?.toLowerCase() === email);
+    if (encontrado) return encontrado.id;
+    if (data.users.length < 200) return null;
+  }
+  return null;
+}
+
 const loginSchema = z.object({
-  email: z.email("Ingresa un correo válido"),
+  email: emailSchema(),
   password: z.string().min(1, "Ingresa tu contraseña"),
 });
 
@@ -56,7 +71,7 @@ export async function iniciarSesion(
     }
 
     const usuario = await prisma.usuario.findFirst({
-      where: { email: validado.data.email, deletedAt: null },
+      where: { email: { equals: validado.data.email, mode: "insensitive" }, deletedAt: null },
       select: { rol: true },
     });
     destino = usuario?.rol === RolUsuario.ADMINISTRADOR ? "/dashboard" : "/portal";
@@ -163,7 +178,7 @@ export async function registrarAdministrador(
 
   try {
     const existente = await prisma.usuario.findFirst({
-      where: { email, deletedAt: null },
+      where: { email: { equals: email, mode: "insensitive" }, deletedAt: null },
       select: { id: true },
     });
 
@@ -175,14 +190,28 @@ export async function registrarAdministrador(
     }
 
     const supabaseAdmin = createSupabaseAdminClient();
-    const { error: errorAuth } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { nombre },
-    });
+    const crearAuth = () =>
+      supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { nombre },
+      });
+    let { error: errorAuth } = await crearAuth();
 
-    if (errorAuth && !errorAuth.message.toLowerCase().includes("already")) {
+    // Ya no hay usuario activo en `usuarios` con este correo (se verificó
+    // arriba), así que el de Auth es un huérfano: se borra y se recrea con la
+    // contraseña nueva.
+    if (errorAuth && errorAuth.message.toLowerCase().includes("already")) {
+      const huerfanoId = await buscarUsuarioAuthPorEmail(supabaseAdmin, email);
+      if (huerfanoId) {
+        const { error: errorBorrado } = await supabaseAdmin.auth.admin.deleteUser(huerfanoId);
+        if (errorBorrado) console.error("registrarAdministrador:deleteHuerfano", errorBorrado);
+        else ({ error: errorAuth } = await crearAuth());
+      }
+    }
+
+    if (errorAuth) {
       console.error("registrarAdministrador:createUser", errorAuth);
       return { status: "error", message: "No se pudo crear la cuenta. Intenta de nuevo." };
     }
