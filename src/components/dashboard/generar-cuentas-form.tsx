@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCerrarPanel } from "@/components/ui/form-panel";
 import { generarCuentasDeCobroMensual } from "@/lib/actions/cuentas-cobro";
 import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
+import { formatearMoneda } from "@/lib/formatters";
 import { BotonSubmit } from "@/components/ui/boton";
 import { InputMoneda } from "@/components/ui/input-moneda";
 import {
@@ -35,9 +36,12 @@ function fechaLimiteSugerida(): string {
 export function GenerarCuentasForm({
   totalUnidades,
   unidadesConCuota = 0,
+  totalRubros = 0,
 }: {
   totalUnidades: number;
   unidadesConCuota?: number;
+  /** Suma de rubros mensuales activos; 0 = no hay nada que incluir. */
+  totalRubros?: number;
 }) {
   const [modo, setModo] = useState<"cuota" | "coeficiente">(
     unidadesConCuota > 0 ? "cuota" : "coeficiente",
@@ -163,6 +167,16 @@ export function GenerarCuentasForm({
           />
         </Campo>
       </div>
+
+      {totalRubros > 0 ? (
+        <label className="flex min-h-11 items-start gap-2 text-sm text-zinc-700">
+          <input type="checkbox" name="incluirRubros" defaultChecked className="mt-1 h-4 w-4" />
+          <span>
+            Sumar los rubros mensuales activos ({formatearMoneda(totalRubros)} por unidad)
+            <span className="block text-xs text-zinc-500">Se agregan a las expensas de cada cuenta.</span>
+          </span>
+        </label>
+      ) : null}
 
       <MensajeAccion estado={estado} />
 

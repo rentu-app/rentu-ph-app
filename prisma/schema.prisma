@@ -201,6 +201,7 @@ model Copropiedad {
   comunicados     Comunicado[]
   documentosPH    DocumentoPH[]
   zonasComunes    ZonaComun[]
+  rubrosCobro     RubroCobro[]
   prestadores     Prestador[]
   ordenesServicio OrdenServicio[]
 
@@ -740,4 +741,25 @@ enum PeriodicidadCosto {
   POR_DIA
   SEMANAL
   MENSUAL
+}
+
+// Concepto de cobro editable de la copropiedad (parqueadero, fondo de
+// imprevistos…). Los rubros activos y mensuales se suman a las expensas al
+// generar las cuentas del periodo; cambiar el monto aquí no toca cuentas ya
+// generadas (esas se editan una a una).
+model RubroCobro {
+  id            String            @id @default(uuid()) @db.Uuid
+  copropiedadId String            @db.Uuid
+  nombre        String
+  monto         Decimal           @default(0) @db.Decimal(12, 2)
+  periodicidad  PeriodicidadCosto @default(MENSUAL)
+  activo        Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  deletedAt     DateTime?
+
+  copropiedad Copropiedad @relation(fields: [copropiedadId], references: [id])
+
+  @@index([copropiedadId])
+  @@map("rubros_cobro")
 }

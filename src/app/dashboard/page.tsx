@@ -8,6 +8,10 @@ import {
 } from "lucide-react";
 import { EstadoPQRS, EstadoReserva } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import {
+  getRubrosDeCopropiedad,
+  totalRubrosMensuales,
+} from "@/lib/data/rubros";
 import { getContextoAdministrador } from "@/lib/session";
 import {
   getCarteraPorTorre,
@@ -64,7 +68,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const [progreso, unidadesConCuota] = await Promise.all([
+  const [progreso, unidadesConCuota, rubros] = await Promise.all([
     getProgresoPrimerosPasos(copropiedad.id),
     prisma.inmueble.count({
       where: {
@@ -73,7 +77,9 @@ export default async function DashboardPage() {
         cuotaAdministracion: { gt: 0 },
       },
     }),
+    getRubrosDeCopropiedad(copropiedad.id),
   ]);
+  const totalRubros = totalRubrosMensuales(rubros);
   const sinUnidades = copropiedad.totalUnidades === 0;
   const completo = Object.values(progreso).every(Boolean);
 
@@ -112,6 +118,7 @@ export default async function DashboardPage() {
                 <GenerarCuentasForm
                   totalUnidades={copropiedad.totalUnidades}
                   unidadesConCuota={unidadesConCuota}
+                  totalRubros={totalRubros}
                 />
               </FormPanel>
               <Link

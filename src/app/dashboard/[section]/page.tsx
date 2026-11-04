@@ -47,6 +47,8 @@ import { ImportarUnidadesForm } from "@/components/cartera/importar-unidades-for
 import { ETIQUETAS_ESTADO_INMUEBLE } from "@/lib/validations/unidades";
 import { FILA_CSV_ESPERADA } from "@/lib/validations/cartera";
 import { KpisCartera } from "@/components/cartera/resumen-cartera";
+import { RubrosCobro } from "@/components/cartera/rubros-cobro";
+import { getRubrosDeCopropiedad } from "@/lib/data/rubros";
 import { MatrizCartera } from "@/components/cartera/matriz-cartera";
 import { UnidadesTabla } from "@/components/cartera/unidades-tabla";
 import { UnidadDetalle } from "@/components/cartera/unidad-detalle";
@@ -428,7 +430,23 @@ async function SeccionCartera({
           />
         )}
       </Suspense>
+
+      <Suspense fallback={<Skeleton className="h-32" />}>
+        <BloqueRubros copropiedadId={copropiedad.id} />
+      </Suspense>
     </div>
+  );
+}
+
+async function BloqueRubros({ copropiedadId }: { copropiedadId: string }) {
+  const rubros = await getRubrosDeCopropiedad(copropiedadId);
+  return (
+    <Seccion
+      titulo="Rubros de cobro"
+      descripcion="Conceptos con valor propio (parqueadero, fondo de imprevistos…). Los mensuales activos se suman a las expensas al generar cuentas."
+    >
+      <RubrosCobro rubros={rubros} />
+    </Seccion>
   );
 }
 

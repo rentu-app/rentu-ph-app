@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { EstadoCuenta, Prisma } from "@prisma/client";
+import { EstadoCuenta, PeriodicidadCosto, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { formatearPeriodo } from "@/lib/formatters";
@@ -107,7 +107,23 @@ export async function generarCuentasDeCobroMensual(
     }
 
     const totalAdministracion = new Prisma.Decimal(montoAdministracionTotal || "0");
-    const expensas = new Prisma.Decimal(montoExpensasPorInmueble);
+    // Los rubros se leen del servidor: el cliente solo dice si quiere incluirlos.
+    const rubros =
+      formData.get("incluirRubros") === "on"
+        ? await prisma.rubroCobro.findMany({
+            where: {
+              copropiedadId: copropiedad.id,
+              deletedAt: null,
+              activo: true,
+              periodicidad: PeriodicidadCosto.MENSUAL,
+            },
+            select: { monto: true },
+          })
+        : [];
+    const expensas = rubros.reduce(
+      (suma, rubro) => suma.plus(rubro.monto),
+      new Prisma.Decimal(montoExpensasPorInmueble)
+    );
 
     const unidadesConCuenta = unidades.filter((unidad) => unidad.cuentasDeCobro.length > 0);
     const omitidos = unidadesConCuenta.length;
