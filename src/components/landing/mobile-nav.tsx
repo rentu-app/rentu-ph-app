@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { ENLACES_NAV } from "@/components/landing/nav-links";
+import { BotonInstalar } from "@/components/pwa/boton-instalar";
 
 /**
  * Único menú con estado que queda en la app: en la landing los enlaces son
@@ -85,6 +86,7 @@ export function MobileNav() {
                 Ingresar
               </Link>
             </nav>
+            <BotonInstalar className="mt-1 flex flex-col [&>button]:w-full" />
           </div>
         </>
       ) : null}

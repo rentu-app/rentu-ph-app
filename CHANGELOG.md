@@ -4,6 +4,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [versionado semántico](https://semver.org/lang/es/). La versión visible en la
 app ("Rentu vX.Y.Z · commit") sale de `package.json`.
 
+## [0.5.1] — 2026-11-04
+
+### Añadido
+- Botón permanente "Instalar app" en el pie y el menú móvil de la landing: sigue disponible después de cerrar el aviso (Android abre el diálogo nativo; iPhone muestra los pasos).
+
+### Corregido
+- Cerrar el aviso de instalación ya no descarta el evento de instalación del navegador.
+
 ## [0.5.0] — 2026-11-03
 
 Integración de la landing de demo con el resto de la línea (changelog, PWA, feedback del cliente).
