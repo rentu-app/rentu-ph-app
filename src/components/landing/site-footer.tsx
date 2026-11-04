@@ -33,7 +33,7 @@ export function SiteFooter() {
           </Link>
         </nav>
 
-        <p className="text-xs text-zinc-400">
+        <p className="text-sm text-zinc-400">
           © {anio} Rentu PH · Tablero operativo de propiedad horizontal
         </p>
       </div>

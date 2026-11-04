@@ -763,3 +763,16 @@ model RubroCobro {
   @@index([copropiedadId])
   @@map("rubros_cobro")
 }
+
+// No se relaciona con Usuario: es un correo dejado por un visitante anónimo
+// de la landing al pedir acceso a la demo, no una cuenta de la app.
+model LeadDemo {
+  id        String    @id @default(uuid()) @db.Uuid
+  email     String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([email])
+  @@map("leads_demo")
+}

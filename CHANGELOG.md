@@ -4,6 +4,28 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y
 [versionado semántico](https://semver.org/lang/es/). La versión visible en la
 app ("Rentu vX.Y.Z · commit") sale de `package.json`.
 
+## [0.5.0] — 2026-11-03
+
+Integración de la landing de demo con el resto de la línea (changelog, PWA, feedback del cliente).
+
+### Añadido
+- **Demo con correo (andresrod2134):** un solo CTA "Entrar a la demo" en la landing; el visitante deja su correo, que se guarda como lead (`leads_demo`) y se abre la sesión fija de la cuenta demo.
+- Base de datos: tabla `leads_demo`.
+
+### Cambiado
+- El formulario de la demo sale de `/login`; la demo se entra solo desde la landing.
+- Textos pequeños de la landing un escalón más grandes para mejorar la lectura.
+
+## [0.4.0] — 2026-11-03
+
+### Añadido
+- **Rentu PH instalable como PWA** en iPhone y Android: manifest, íconos 192/512 y maskable, pantalla completa y metadata de iPhone (`appleWebApp`, `themeColor`).
+- Service worker mínimo (network-first, solo estáticos; nunca páginas autenticadas, `/api` ni server actions) y página `/offline` estática.
+- Aviso discreto "Instalar app" (Android con un clic; iPhone con instrucciones), solo en móvil y si no está instalada; se cierra y no vuelve.
+
+### Cambiado
+- Login, registro y el indicador de versión respetan el área segura de iOS (notch y barra de inicio).
+
 ## [0.3.1] — 2026-11-03
 
 ### Cambiado
