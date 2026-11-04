@@ -98,19 +98,38 @@ export async function iniciarSesion(
   redirect(destino);
 }
 
+const entrarComoDemoSchema = z.object({
+  email: emailSchema("Ingresa el correo con el que quieres que te contactemos."),
+});
+
 /**
- * Entrada de un clic a la cuenta demo de administrador. La contraseña se lee
- * de `DEMO_ADMIN_PASSWORD` en el servidor y nunca viaja al HTML: la cuenta
- * demo comparte contraseña con otras cuentas sembradas, así que no se
- * publica en la página.
+ * Entrada a la cuenta demo de administrador, desde el CTA "Entrar a la
+ * demo" de la landing. El correo que deja el visitante NO crea ninguna
+ * cuenta ni inicia sesión con él: se guarda como lead en `LeadDemo` (interés
+ * comercial) y, aparte, se abre la sesión fija de la cuenta demo. La
+ * contraseña se lee de `DEMO_ADMIN_PASSWORD` en el servidor y nunca viaja al
+ * HTML: la cuenta demo comparte contraseña con otras cuentas sembradas, así
+ * que no se publica en la página.
  */
-export async function entrarComoDemo(): Promise<EstadoAccionLogin> {
+export async function entrarComoDemo(
+  _prevState: EstadoAccionLogin,
+  formData: FormData
+): Promise<EstadoAccionLogin> {
+  const validado = entrarComoDemoSchema.safeParse({ email: formData.get("email") });
+  if (!validado.success) {
+    return { status: "error", message: "Ingresa un correo válido para continuar." };
+  }
+
   const password = process.env.DEMO_ADMIN_PASSWORD;
   if (!password) {
     return { status: "error", message: "La demo no está disponible en este momento." };
   }
 
   try {
+    // El lead se guarda aparte del inicio de sesión: si falla el login de la
+    // demo no queremos perder el correo que el visitante ya dejó.
+    await prisma.leadDemo.create({ data: { email: validado.data.email } });
+
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.signInWithPassword({
       email: EMAIL_DEMO_ADMIN,
