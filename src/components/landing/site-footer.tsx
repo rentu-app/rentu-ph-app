@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
 import { ENLACES_NAV } from "@/components/landing/nav-links";
+import { BotonInstalar } from "@/components/pwa/boton-instalar";
 
 export function SiteFooter() {
   const anio = new Date().getFullYear();
@@ -32,6 +33,8 @@ export function SiteFooter() {
             Ingresar
           </Link>
         </nav>
+
+        <BotonInstalar className="lg:hidden" />
 
         <p className="text-sm text-zinc-400">
           © {anio} Rentu PH · Tablero operativo de propiedad horizontal

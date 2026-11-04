@@ -51,6 +51,13 @@ export function leerModoInstalacion(): ModoInstalacion {
     // localStorage bloqueado (modo privado): el aviso funciona igual, solo no recuerda el cierre.
   }
 
+  return leerModoDisponible();
+}
+
+/** Igual que `leerModoInstalacion` pero ignora si el aviso se cerró: alimenta el botón permanente. */
+export function leerModoDisponible(): ModoInstalacion {
+  if (typeof window === "undefined") return null;
+
   const instalada =
     window.matchMedia("(display-mode: standalone)").matches ||
     (navigator as Navigator & { standalone?: boolean }).standalone === true;
@@ -81,6 +88,6 @@ export function cerrarAvisoInstalacion() {
   } catch {
     // sin localStorage: se oculta solo hasta recargar.
   }
-  evento = null;
+  // El evento se conserva: el botón permanente "Instalar app" lo sigue usando.
   notificar();
 }
