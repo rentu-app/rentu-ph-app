@@ -1,14 +1,19 @@
 /**
- * Versión de Rentu, abajo al centro y medio opaca, solo para saber qué build
- * se está viendo. No intercepta clics ni se imprime.
+ * Versión de Rentu, abajo al centro, solo para saber qué build se está viendo.
+ * Píldora discreta: nombre y versión en gris, commit en mono más tenue. No
+ * intercepta clics ni se imprime, y se oculta en pantallas muy bajas para no
+ * tapar contenido.
  */
 export function VersionApp() {
   return (
     <p
       aria-hidden="true"
-      className="pointer-events-none fixed bottom-1 left-1/2 z-10 -translate-x-1/2 select-none text-[10px] tabular-nums text-zinc-500 opacity-50 print:hidden"
+      className="pointer-events-none fixed bottom-1.5 left-1/2 z-10 flex -translate-x-1/2 select-none items-center gap-1.5 rounded-full border border-zinc-200/60 bg-white/60 px-2.5 py-0.5 text-[10px] leading-4 text-zinc-500 opacity-60 backdrop-blur-sm print:hidden"
     >
-      Rentu v{process.env.NEXT_PUBLIC_APP_VERSION} · {process.env.NEXT_PUBLIC_APP_COMMIT}
+      <span className="font-medium tracking-wide">Rentu</span>
+      <span className="tabular-nums">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
+      <span className="h-0.5 w-0.5 rounded-full bg-zinc-400" />
+      <span className="font-mono text-zinc-400">{process.env.NEXT_PUBLIC_APP_COMMIT}</span>
     </p>
   );
 }
