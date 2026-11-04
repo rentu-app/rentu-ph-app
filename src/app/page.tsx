@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { AvisoCuentaEliminada } from "@/components/landing/aviso-cuenta-eliminada";
+import { AvisoInstalar } from "@/components/pwa/aviso-instalar";
 import { SiteHeader } from "@/components/landing/site-header";
 import { HeroSection } from "@/components/landing/hero-section";
 import { ModulosGrid } from "@/components/landing/modulos-grid";
@@ -13,6 +14,7 @@ export default function Home() {
         <AvisoCuentaEliminada />
       </Suspense>
       <SiteHeader />
+      <AvisoInstalar className="mx-4 mt-3 lg:hidden" />
       <main className="flex-1">
         <HeroSection />
         <ModulosGrid />

@@ -1,3 +1,4 @@
+import { AvisoInstalar } from "@/components/pwa/aviso-instalar";
 import { Logo } from "@/components/ui/logo";
 import Link from "next/link";
 import { ArrowLeftRight, MapPin } from "lucide-react";
@@ -70,6 +71,7 @@ export default async function DashboardLayout({
       <AyudaFlotante />
 
       <main className="mx-auto max-w-6xl px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-8">
+        <AvisoInstalar className="mb-6 lg:hidden" />
         {children}
       </main>
     </div>
