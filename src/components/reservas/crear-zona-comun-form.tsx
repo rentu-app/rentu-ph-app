@@ -4,6 +4,7 @@ import { useActionState, useId } from "react";
 import { crearZonaComun } from "@/lib/actions/reservas";
 import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
 import { BotonSubmit } from "@/components/ui/boton";
+import { InputMoneda } from "@/components/ui/input-moneda";
 import { CLASES_CONTROL, Campo, MensajeAccion } from "@/components/ui/formulario";
 
 export function CrearZonaComunForm() {
@@ -49,12 +50,9 @@ export function CrearZonaComunForm() {
           htmlFor={idCosto}
           error={estado.errores?.costo?.[0]}
         >
-          <input
+          <InputMoneda
             id={idCosto}
             name="costo"
-            type="text"
-            inputMode="decimal"
-            placeholder="0"
             className={`${CLASES_CONTROL} tabular-nums`}
           />
         </Campo>

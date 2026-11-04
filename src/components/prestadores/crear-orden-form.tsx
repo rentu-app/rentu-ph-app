@@ -7,6 +7,7 @@ import type { PqrsEscalable } from "@/lib/data/prestadores";
 import { ETIQUETAS_TIPO_PRESTADOR } from "@/lib/validations/prestadores";
 import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
 import { BotonSubmit } from "@/components/ui/boton";
+import { InputMoneda } from "@/components/ui/input-moneda";
 import {
   CLASES_CONTROL,
   CLASES_TEXTAREA,
@@ -135,12 +136,10 @@ export function CrearOrdenForm({
           error={estado.errores?.costoEstimado?.[0]}
           ayuda="Referencia de presupuesto. Rentu no hace pagos ni contabilidad."
         >
-          <input
+          <InputMoneda
             id={idCosto}
             name="costoEstimado"
-            type="text"
-            inputMode="decimal"
-            placeholder="ej. 850000"
+            placeholder="$ 850.000"
             className={`${CLASES_CONTROL} tabular-nums`}
           />
         </Campo>

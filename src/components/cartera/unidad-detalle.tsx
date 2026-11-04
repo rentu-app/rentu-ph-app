@@ -29,7 +29,7 @@ import {
   ETIQUETAS_ETAPA_COBRO,
   ETIQUETAS_TIPO_GESTION,
 } from "@/lib/validations/cartera";
-import { formatearFecha, formatearMoneda, formatearPeriodo } from "@/lib/formatters";
+import { decimalComa, formatearFecha, formatearMoneda, formatearPeriodo } from "@/lib/formatters";
 
 const ETIQUETAS_ROL: Record<string, string> = {
   PROPIETARIO: "Propietario",
@@ -73,8 +73,8 @@ export function UnidadDetalle({
               {unidad.identificador}
             </h1>
             <p className="mt-1 text-sm text-zinc-500">
-              {unidad.torre ? `${unidad.torre} · ` : ""}coeficiente {unidad.coeficiente.toFixed(5)}
-              {unidad.areaM2 ? ` · ${unidad.areaM2} m²` : ""} ·{" "}
+              {unidad.torre ? `${unidad.torre} · ` : ""}coeficiente {decimalComa(unidad.coeficiente.toFixed(5))}
+              {unidad.areaM2 ? ` · ${decimalComa(unidad.areaM2)} m²` : ""} ·{" "}
               {unidad.estado === "OCUPADO" ? "Ocupada" : "Desocupada"}
             </p>
           </div>

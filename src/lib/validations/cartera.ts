@@ -90,7 +90,8 @@ export const filaUnidadSchema = z.object({
   areaM2: z
     .string()
     .trim()
-    .regex(/^\d{1,6}(\.\d{1,2})?$/, "Área inválida (ej. 72.50)")
+    .transform((valor) => valor.replace(",", "."))
+    .pipe(z.string().regex(/^\d{1,6}(\.\d{1,2})?$/, "Área inválida (ej. 72,50)"))
     .optional()
     .or(z.literal("")),
 });

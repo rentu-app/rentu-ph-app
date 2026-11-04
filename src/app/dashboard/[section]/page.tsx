@@ -24,6 +24,7 @@ import {
   getDetalleUnidad,
   getResumenCartera,
   getUnidadesFiltradas,
+  type UnidadCartera,
 } from "@/lib/data/cartera";
 import {
   getPqrsDeCopropiedad,
@@ -87,7 +88,7 @@ import {
   Td,
   Th,
 } from "@/components/ui/primitivos";
-import { etiquetaTorre, TORRE_VACIA_PARAM } from "@/lib/formatters";
+import { decimalComa, etiquetaTorre, TORRE_VACIA_PARAM } from "@/lib/formatters";
 
 /**
  * Las subpáginas del dashboard viven en una sola ruta dinámica en vez de
@@ -243,9 +244,19 @@ async function SeccionCartera({
     ? situacionParam
     : undefined;
 
+  const ordenParam = leerParam(searchParams, "orden");
+  const columnaOrden = ORDENES_CARTERA.includes(ordenParam as ColumnaOrden)
+    ? (ordenParam as ColumnaOrden)
+    : undefined;
+  const dirOrden = leerParam(searchParams, "dir") === "desc" ? "desc" : "asc";
+
   const parametrosLista = new URLSearchParams();
   if (torre) parametrosLista.set("torre", torre);
   if (situacion) parametrosLista.set("situacion", situacion);
+  if (columnaOrden) {
+    parametrosLista.set("orden", columnaOrden);
+    parametrosLista.set("dir", dirOrden);
+  }
   const sufijoLista = parametrosLista.toString();
   const hrefLista = `/dashboard/cartera${sufijoLista ? `?${sufijoLista}` : ""}`;
 
@@ -261,6 +272,10 @@ async function SeccionCartera({
     const situacionFinal = "situacion" in cambios ? cambios.situacion : situacion;
     if (torreFinal) parametros.set("torre", torreFinal);
     if (situacionFinal) parametros.set("situacion", situacionFinal);
+    if (columnaOrden) {
+      parametros.set("orden", columnaOrden);
+      parametros.set("dir", dirOrden);
+    }
     const sufijo = parametros.toString();
     return `/dashboard/cartera${sufijo ? `?${sufijo}` : ""}`;
   }
@@ -316,10 +331,42 @@ async function SeccionCartera({
           torre={torreFiltro}
           situacion={situacion}
           sufijoLista={sufijoLista}
+          orden={columnaOrden ? { columna: columnaOrden, dir: dirOrden } : undefined}
+          hrefOrden={(columna) => {
+            const p = new URLSearchParams();
+            if (torre) p.set("torre", torre);
+            if (situacion) p.set("situacion", situacion);
+            p.set("orden", columna);
+            p.set("dir", columna === columnaOrden && dirOrden === "asc" ? "desc" : "asc");
+            return `/dashboard/cartera?${p.toString()}`;
+          }}
         />
       </Suspense>
     </div>
   );
+}
+
+const ORDENES_CARTERA = ["unidad", "torre", "saldo", "vencido", "mora", "etapa", "pago"] as const;
+type ColumnaOrden = (typeof ORDENES_CARTERA)[number];
+
+function compararPor(columna: ColumnaOrden, a: UnidadCartera, b: UnidadCartera): number {
+  const texto = (x: string, y: string) => x.localeCompare(y, "es", { numeric: true });
+  switch (columna) {
+    case "unidad":
+      return texto(a.identificador, b.identificador);
+    case "torre":
+      return texto(a.torre, b.torre) || texto(a.identificador, b.identificador);
+    case "saldo":
+      return a.saldoTotal - b.saldoTotal;
+    case "vencido":
+      return a.saldoVencido - b.saldoVencido;
+    case "mora":
+      return a.diasMora - b.diasMora;
+    case "etapa":
+      return texto(a.etapaCobro, b.etapaCobro);
+    case "pago":
+      return (a.ultimoPago?.fechaPago.getTime() ?? 0) - (b.ultimoPago?.fechaPago.getTime() ?? 0);
+  }
 }
 
 async function KpisDeCartera({ copropiedadId }: { copropiedadId: string }) {
@@ -332,21 +379,33 @@ async function ListaUnidades({
   torre,
   situacion,
   sufijoLista,
+  orden,
+  hrefOrden,
 }: {
   copropiedadId: string;
   torre?: string;
   situacion?: string;
   sufijoLista: string;
+  orden?: { columna: ColumnaOrden; dir: "asc" | "desc" };
+  hrefOrden: (columna: string) => string;
 }) {
   const unidades = await getUnidadesFiltradas(copropiedadId, { torre, situacion });
+  if (orden) {
+    const signo = orden.dir === "asc" ? 1 : -1;
+    unidades.sort((a, b) => signo * compararPor(orden.columna, a, b));
+  }
 
   return (
     <Seccion
       titulo={`${unidades.length} unidad(es)`}
-      descripcion="Ordenadas por saldo pendiente."
+      descripcion={
+        orden ? "Haz clic en un encabezado para cambiar el orden." : "Ordenadas por saldo pendiente."
+      }
     >
       <UnidadesTabla
         unidades={unidades}
+        ordenActual={orden}
+        hrefOrden={hrefOrden}
         hrefDe={(id) =>
           `/dashboard/cartera?unidad=${id}${sufijoLista ? `&${sufijoLista}` : ""}`
         }
@@ -432,8 +491,8 @@ async function SeccionUnidades({ copropiedad }: { copropiedad: CopropiedadActiva
                   <tr key={unidad.id}>
                     <Td className="font-medium text-zinc-900">{unidad.identificador}</Td>
                     <Td>{etiquetaTorre(unidad.torre)}</Td>
-                    <Td className="text-right tabular-nums">{unidad.coeficiente} %</Td>
-                    <Td className="text-right tabular-nums">{unidad.areaM2 || "—"}</Td>
+                    <Td className="text-right tabular-nums">{decimalComa(unidad.coeficiente)} %</Td>
+                    <Td className="text-right tabular-nums">{unidad.areaM2 ? decimalComa(unidad.areaM2) : "—"}</Td>
                     <Td>
                       <Etiqueta tono={unidad.estado === "OCUPADO" ? "exito" : "neutro"}>
                         {ETIQUETAS_ESTADO_INMUEBLE[unidad.estado]}

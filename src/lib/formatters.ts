@@ -27,6 +27,11 @@ export function formatearMoneda(
   return formatoMoneda.format(Number(valor.toString()));
 }
 
+/** "72.50" → "72,50": todo decimal visible usa coma (es-CO), nunca punto. */
+export function decimalComa(valor: string | number | { toString(): string }): string {
+  return valor.toString().replace(".", ",");
+}
+
 export function formatearFecha(valor: Date | string): string {
   return formatoFecha.format(new Date(valor));
 }

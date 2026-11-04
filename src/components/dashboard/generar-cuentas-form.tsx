@@ -6,6 +6,7 @@ import { useCerrarPanel } from "@/components/ui/form-panel";
 import { generarCuentasDeCobroMensual } from "@/lib/actions/cuentas-cobro";
 import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
 import { BotonSubmit } from "@/components/ui/boton";
+import { InputMoneda } from "@/components/ui/input-moneda";
 import { CLASES_CONTROL, Campo, MensajeAccion } from "@/components/ui/formulario";
 
 function periodoActual(): string {
@@ -82,13 +83,11 @@ export function GenerarCuentasForm({ totalUnidades }: { totalUnidades: number })
           error={estado.errores?.montoAdministracionTotal?.[0]}
           ayuda={`Se reparte entre las ${totalUnidades} unidades según su coeficiente.`}
         >
-          <input
+          <InputMoneda
             id={idMontoAdmin}
             name="montoAdministracionTotal"
-            type="text"
-            inputMode="decimal"
             required
-            placeholder="ej. 32000000"
+            placeholder="$ 32.000.000"
             className={`${CLASES_CONTROL} tabular-nums`}
           />
         </Campo>
@@ -99,12 +98,9 @@ export function GenerarCuentasForm({ totalUnidades }: { totalUnidades: number })
           error={estado.errores?.montoExpensasPorInmueble?.[0]}
           ayuda="Cargo fijo igual para todas, ej. cuota extraordinaria aprobada."
         >
-          <input
+          <InputMoneda
             id={idExpensas}
             name="montoExpensasPorInmueble"
-            type="text"
-            inputMode="decimal"
-            placeholder="0"
             className={`${CLASES_CONTROL} tabular-nums`}
           />
         </Campo>

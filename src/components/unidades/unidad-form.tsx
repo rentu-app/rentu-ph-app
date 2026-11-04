@@ -1,5 +1,6 @@
 "use client";
 
+import { decimalComa } from "@/lib/formatters";
 import { startTransition, useActionState, useEffect, useId, useRef, type FormEvent } from "react";
 import { EstadoInmueble } from "@prisma/client";
 import { actualizarUnidad, crearUnidad } from "@/lib/actions/unidades";
@@ -124,8 +125,8 @@ export function UnidadForm({
             type="text"
             inputMode="decimal"
             required
-            defaultValue={unidad?.coeficiente ?? ""}
-            placeholder="4.167"
+            defaultValue={decimalComa(unidad?.coeficiente ?? "")}
+            placeholder="4,167"
             className={`${CLASES_CONTROL} tabular-nums`}
           />
         </Campo>
@@ -141,8 +142,8 @@ export function UnidadForm({
             name="areaM2"
             type="text"
             inputMode="decimal"
-            defaultValue={unidad?.areaM2 ?? ""}
-            placeholder="72.50"
+            defaultValue={decimalComa(unidad?.areaM2 ?? "")}
+            placeholder="72,50"
             className={`${CLASES_CONTROL} tabular-nums`}
           />
         </Campo>

@@ -111,7 +111,7 @@ export function PrimerosPasos({
                 <FormPanel
                   triggerLabel="Generar cuentas"
                   title="Generar cuentas de cobro del periodo"
-                  description="Crea una cuenta por cada unidad activa, repartiendo el total de administración según el coeficiente y arrastrando el saldo pendiente."
+                  description="Crea una cuenta por cada unidad activa, repartiendo el total de administración según el coeficiente."
                   icon={<ReceiptText className="h-4 w-4" />}
                 >
                   <GenerarCuentasForm totalUnidades={totalUnidades} />

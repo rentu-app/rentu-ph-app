@@ -24,11 +24,19 @@ import { formatearFecha, formatearMoneda, etiquetaTorre } from "@/lib/formatters
 export function UnidadesTabla({
   unidades,
   hrefDe,
+  ordenActual,
+  hrefOrden,
 }: {
   unidades: UnidadCartera[];
+  /** Columna y sentido activos; si falta, no hay encabezados ordenables. */
+  ordenActual?: { columna: string; dir: "asc" | "desc" };
+  /** Enlace que ordena por una columna (alterna el sentido si ya está activa). */
+  hrefOrden?: (columna: string) => string;
   /** Construye el enlace al detalle conservando los filtros activos. */
   hrefDe: (unidadId: string) => string;
 }) {
+  const orden = { ordenActual, hrefOrden };
+
   if (unidades.length === 0) {
     return (
       <EstadoVacio
@@ -88,14 +96,14 @@ export function UnidadesTabla({
           <table className="min-w-full divide-y divide-zinc-200">
             <thead className="bg-zinc-50">
               <tr>
-                <Th>Unidad</Th>
-                <Th>Torre</Th>
+                <Ordenable columna="unidad" etiqueta="Unidad" {...orden} />
+                <Ordenable columna="torre" etiqueta="Torre" {...orden} />
                 <Th>Residentes</Th>
-                <Th className="text-right">Saldo</Th>
-                <Th className="text-right">Vencido</Th>
-                <Th>Mora</Th>
-                <Th>Etapa</Th>
-                <Th>Último pago</Th>
+                <Ordenable columna="saldo" etiqueta="Saldo" derecha {...orden} />
+                <Ordenable columna="vencido" etiqueta="Vencido" derecha {...orden} />
+                <Ordenable columna="mora" etiqueta="Mora" {...orden} />
+                <Ordenable columna="etapa" etiqueta="Etapa" {...orden} />
+                <Ordenable columna="pago" etiqueta="Último pago" {...orden} />
                 <Th />
               </tr>
             </thead>
@@ -203,5 +211,39 @@ export function UnidadesPrioritarias({
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Encabezado de columna que ordena la tabla al hacer clic (estado en la URL). */
+function Ordenable({
+  columna,
+  etiqueta,
+  derecha,
+  ordenActual,
+  hrefOrden,
+}: {
+  columna: string;
+  etiqueta: string;
+  derecha?: boolean;
+  ordenActual?: { columna: string; dir: "asc" | "desc" };
+  hrefOrden?: (columna: string) => string;
+}) {
+  if (!hrefOrden) return <Th className={derecha ? "text-right" : ""}>{etiqueta}</Th>;
+  const activa = ordenActual?.columna === columna;
+  const flecha = activa ? (ordenActual?.dir === "asc" ? "↑" : "↓") : "";
+  return (
+    <th
+      scope="col"
+      aria-sort={activa ? (ordenActual?.dir === "asc" ? "ascending" : "descending") : "none"}
+      className={`whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 ${derecha ? "text-right" : "text-left"}`}
+    >
+      <Link
+        href={hrefOrden(columna)}
+        className={`inline-flex min-h-8 items-center gap-1 hover:text-zinc-900 ${activa ? "text-zinc-900" : ""}`}
+      >
+        {etiqueta}
+        <span aria-hidden="true" className="w-3">{flecha}</span>
+      </Link>
+    </th>
   );
 }

@@ -77,7 +77,10 @@ export default async function DashboardPage() {
           titulo={`Hola, ${administrador.nombre.split(" ")[0]}`}
           descripcion={`Vamos a dejar lista ${copropiedad.nombre}.`}
         />
-        <PrimerosPasos progreso={progreso} totalUnidades={copropiedad.totalUnidades} />
+        <PrimerosPasos
+          progreso={progreso}
+          totalUnidades={copropiedad.totalUnidades}
+        />
       </div>
     );
   }
@@ -88,28 +91,33 @@ export default async function DashboardPage() {
         titulo={`Hola, ${administrador.nombre.split(" ")[0]}`}
         descripcion={`Estado de la cartera de ${copropiedad.nombre}.`}
         accion={
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <FormPanel
-              triggerLabel="Generar cuentas"
-              title="Generar cuentas de cobro del periodo"
-              description="Crea una cuenta por cada unidad activa, repartiendo el total de administración según el coeficiente y arrastrando el saldo pendiente."
-              icon={<ReceiptText className="h-4 w-4" />}
-            >
-              <GenerarCuentasForm totalUnidades={copropiedad.totalUnidades} />
-            </FormPanel>
-            <Link
-              href="/dashboard/unidades"
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent-500 px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-accent-400 sm:w-auto"
-            >
-              <FileUp className="h-4 w-4" />
-              Agregar unidades
-            </Link>
-          </div>
+          completo ? (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <FormPanel
+                triggerLabel="Generar cuentas"
+                title="Generar cuentas de cobro del periodo"
+                description="Crea una cuenta por cada unidad activa, repartiendo el total de administración según el coeficiente."
+                icon={<ReceiptText className="h-4 w-4" />}
+              >
+                <GenerarCuentasForm totalUnidades={copropiedad.totalUnidades} />
+              </FormPanel>
+              <Link
+                href="/dashboard/unidades"
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent-500 px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-accent-400 sm:w-auto"
+              >
+                <FileUp className="h-4 w-4" />
+                Agregar unidades
+              </Link>
+            </div>
+          ) : undefined
         }
       />
 
       {completo ? null : (
-        <PrimerosPasos progreso={progreso} totalUnidades={copropiedad.totalUnidades} />
+        <PrimerosPasos
+          progreso={progreso}
+          totalUnidades={copropiedad.totalUnidades}
+        />
       )}
 
       <Suspense fallback={<EsqueletoKpis />}>

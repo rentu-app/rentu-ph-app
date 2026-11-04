@@ -5,9 +5,11 @@ import {
   registrarPago,
   registrarPagoTotalDesdeFormulario,
 } from "@/lib/actions/pagos";
+import { formatearMoneda } from "@/lib/formatters";
 import { METODOS_PAGO } from "@/lib/validations/pagos";
 import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
 import { BotonSubmit } from "@/components/ui/boton";
+import { InputMoneda } from "@/components/ui/input-moneda";
 import { CLASES_CONTROL } from "@/components/ui/formulario";
 
 /**
@@ -48,12 +50,10 @@ export function RegistrarPagoForm({
             <label htmlFor={montoId} className="text-xs text-zinc-500">
               Monto
             </label>
-            <input
+            <InputMoneda
               id={montoId}
               name="monto"
-              type="text"
-              inputMode="decimal"
-              placeholder={saldoPendiente}
+              placeholder={formatearMoneda(saldoPendiente)}
               className={`${CLASES_CONTROL} tabular-nums`}
             />
           </div>
