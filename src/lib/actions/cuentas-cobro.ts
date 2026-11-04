@@ -6,6 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { formatearPeriodo } from "@/lib/formatters";
 import { getContextoAdministrador } from "@/lib/session";
+import { montoDecimalSchema } from "@/lib/validations/dinero";
 import { generarCuentasDeCobroSchema } from "@/lib/validations/cuentas-cobro";
 import type { EstadoAccionFormulario } from "@/lib/types/estado-accion";
 
@@ -47,8 +48,9 @@ export async function generarCuentasDeCobroMensual(
 ): Promise<EstadoAccionGeneracion> {
   const validado = generarCuentasDeCobroSchema.safeParse({
     periodo: formData.get("periodo"),
+    modo: formData.get("modo") ?? "coeficiente",
     montoAdministracionTotal: formData.get("montoAdministracionTotal"),
-    montoExpensasPorInmueble: formData.get("montoExpensasPorInmueble") ?? "0",
+    montoExpensasPorInmueble: formData.get("montoExpensasPorInmueble") || "0",
     fechaLimitePago: formData.get("fechaLimitePago"),
   });
 
@@ -62,6 +64,7 @@ export async function generarCuentasDeCobroMensual(
 
   const {
     periodo,
+    modo,
     montoAdministracionTotal,
     montoExpensasPorInmueble,
     fechaLimitePago,
@@ -77,12 +80,21 @@ export async function generarCuentasDeCobroMensual(
       };
     }
 
+    if (modo === "coeficiente" && !montoDecimalSchema.safeParse(montoAdministracionTotal).success) {
+      return {
+        status: "error",
+        message: "Revisa los datos del formulario.",
+        errores: { montoAdministracionTotal: ["Ingresa el total de administración del mes"] },
+      };
+    }
+
     const unidades = await prisma.inmueble.findMany({
       where: { copropiedadId: copropiedad.id, deletedAt: null },
       select: {
         id: true,
         identificador: true,
         coeficiente: true,
+        cuotaAdministracion: true,
         cuentasDeCobro: {
           where: { deletedAt: null, periodo },
           select: { id: true },
@@ -94,13 +106,28 @@ export async function generarCuentasDeCobroMensual(
       return { status: "error", message: "Esta copropiedad no tiene unidades activas." };
     }
 
-    const totalAdministracion = new Prisma.Decimal(montoAdministracionTotal);
+    const totalAdministracion = new Prisma.Decimal(montoAdministracionTotal || "0");
     const expensas = new Prisma.Decimal(montoExpensasPorInmueble);
 
+    const unidadesConCuenta = unidades.filter((unidad) => unidad.cuentasDeCobro.length > 0);
+    const omitidos = unidadesConCuenta.length;
+    // En modo "cuota" las unidades sin cuota propia no se cobran: se avisa al final.
+    const sinCuota =
+      modo === "cuota"
+        ? unidades.filter((unidad) => unidad.cuotaAdministracion.lte(0)).length
+        : 0;
     const unidadesAGenerar = unidades.filter(
-      (unidad) => unidad.cuentasDeCobro.length === 0
+      (unidad) =>
+        unidad.cuentasDeCobro.length === 0 &&
+        (modo === "coeficiente" || unidad.cuotaAdministracion.gt(0))
     );
-    const omitidos = unidades.length - unidadesAGenerar.length;
+
+    if (unidadesAGenerar.length === 0 && omitidos === 0) {
+      return {
+        status: "error",
+        message: "Ninguna unidad tiene cuota de administración. Asígnala en Unidades o reparte por coeficiente.",
+      };
+    }
 
     // Si el periodo ya tiene cuentas (aunque sea de algunas unidades) no se
     // genera nada: evita duplicar al repetir el envío o regenerar un periodo.
@@ -113,9 +140,10 @@ export async function generarCuentasDeCobroMensual(
 
     await prisma.$transaction(
       unidadesAGenerar.map((unidad) => {
-        const montoAdministracion = totalAdministracion
-          .times(unidad.coeficiente)
-          .toDecimalPlaces(2);
+        const montoAdministracion =
+          modo === "cuota"
+            ? unidad.cuotaAdministracion
+            : totalAdministracion.times(unidad.coeficiente).toDecimalPlaces(2);
         const totalAPagar = montoAdministracion.plus(expensas);
 
         return prisma.cuentaDeCobro.create({
@@ -138,7 +166,9 @@ export async function generarCuentasDeCobroMensual(
 
     return {
       status: "success",
-      message: `${unidadesAGenerar.length} cuenta(s) de cobro generada(s) para ${formatearPeriodo(periodo)}.`,
+      message:
+        `${unidadesAGenerar.length} cuenta(s) de cobro generada(s) para ${formatearPeriodo(periodo)}.` +
+        (sinCuota > 0 ? ` ${sinCuota} unidad(es) sin cuota no se cobraron.` : ""),
     };
   } catch (error) {
     console.error("generarCuentasDeCobroMensual", error);

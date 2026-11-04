@@ -1,8 +1,17 @@
 import { z } from "zod";
-import { EstadoReserva } from "@prisma/client";
+import { EstadoReserva, PeriodicidadCosto } from "@prisma/client";
 import { montoDecimalOpcionalSchema } from "@/lib/validations/dinero";
 
+export const ETIQUETAS_PERIODICIDAD: Record<PeriodicidadCosto, string> = {
+  POR_USO: "por uso",
+  POR_HORA: "por hora",
+  POR_DIA: "por día",
+  SEMANAL: "semanal",
+  MENSUAL: "mensual",
+};
+
 export const crearZonaComunSchema = z.object({
+  periodicidadCosto: z.enum(PeriodicidadCosto, "Elige la periodicidad"),
   nombre: z.string().trim().min(2, "Escribe un nombre").max(120, "Máximo 120 caracteres"),
   descripcion: z
     .string()
@@ -43,6 +52,10 @@ export const crearReservaSchema = z
 export const actualizarEstadoReservaSchema = z.object({
   reservaId: z.uuid("Reserva inválida"),
   estado: z.enum(EstadoReserva),
+});
+
+export const editarZonaComunSchema = crearZonaComunSchema.extend({
+  zonaId: z.uuid("Zona inválida"),
 });
 
 export type CrearZonaComunInput = z.infer<typeof crearZonaComunSchema>;

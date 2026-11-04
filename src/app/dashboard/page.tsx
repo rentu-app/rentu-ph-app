@@ -7,6 +7,7 @@ import {
   ReceiptText,
 } from "lucide-react";
 import { EstadoPQRS, EstadoReserva } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { getContextoAdministrador } from "@/lib/session";
 import {
   getCarteraPorTorre,
@@ -63,7 +64,16 @@ export default async function DashboardPage() {
     );
   }
 
-  const progreso = await getProgresoPrimerosPasos(copropiedad.id);
+  const [progreso, unidadesConCuota] = await Promise.all([
+    getProgresoPrimerosPasos(copropiedad.id),
+    prisma.inmueble.count({
+      where: {
+        copropiedadId: copropiedad.id,
+        deletedAt: null,
+        cuotaAdministracion: { gt: 0 },
+      },
+    }),
+  ]);
   const sinUnidades = copropiedad.totalUnidades === 0;
   const completo = Object.values(progreso).every(Boolean);
 
@@ -99,7 +109,10 @@ export default async function DashboardPage() {
                 description="Crea una cuenta por cada unidad activa, repartiendo el total de administración según el coeficiente."
                 icon={<ReceiptText className="h-4 w-4" />}
               >
-                <GenerarCuentasForm totalUnidades={copropiedad.totalUnidades} />
+                <GenerarCuentasForm
+                  totalUnidades={copropiedad.totalUnidades}
+                  unidadesConCuota={unidadesConCuota}
+                />
               </FormPanel>
               <Link
                 href="/dashboard/unidades"

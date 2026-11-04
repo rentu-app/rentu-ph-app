@@ -74,6 +74,7 @@ export function operacionesReactivarUnidad(
     torre: string;
     coeficiente: Prisma.Decimal;
     areaM2: Prisma.Decimal | null;
+    cuotaAdministracion?: Prisma.Decimal;
     estado: EstadoInmueble;
   }
 ) {

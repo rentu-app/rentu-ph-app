@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  montoDecimalOpcionalSchema,
-  montoDecimalSchema,
-} from "@/lib/validations/dinero";
+import { montoDecimalOpcionalSchema } from "@/lib/validations/dinero";
 
 const PERIODO_REGEX = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -15,7 +12,10 @@ export const generarCuentasDeCobroSchema = z.object({
     .string()
     .trim()
     .regex(PERIODO_REGEX, "Formato de periodo inválido (usa AAAA-MM)"),
-  montoAdministracionTotal: montoDecimalSchema,
+  // "cuota": cada unidad paga su propia cuota mensual; "coeficiente": se
+  // reparte `montoAdministracionTotal` según el coeficiente.
+  modo: z.enum(["cuota", "coeficiente"]).default("coeficiente"),
+  montoAdministracionTotal: z.string().trim().optional().default(""),
   montoExpensasPorInmueble: montoDecimalOpcionalSchema,
   fechaLimitePago: z
     .string()

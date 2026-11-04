@@ -19,6 +19,7 @@ export const getUnidadesDeCopropiedad = cache(async (copropiedadId: string) => {
       torre: true,
       coeficiente: true,
       areaM2: true,
+      cuotaAdministracion: true,
       estado: true,
     },
   });
@@ -32,6 +33,7 @@ export const getUnidadesDeCopropiedad = cache(async (copropiedadId: string) => {
       torre: fila.torre,
       coeficiente: fraccionAPorcentaje(fila.coeficiente),
       areaM2: fila.areaM2 ? fila.areaM2.toFixed(2) : "",
+      cuotaAdministracion: fila.cuotaAdministracion.toFixed(0),
       estado: fila.estado,
     })),
     /** Suma como fracción (1.00000 = 100 %); se muestra en porcentaje. */

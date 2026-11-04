@@ -14,6 +14,7 @@ export const getZonasComunes = cache(async (copropiedadId: string) => {
       descripcion: true,
       aforo: true,
       costo: true,
+      periodicidadCosto: true,
       activa: true,
       _count: {
         select: {
@@ -69,7 +70,14 @@ export const getZonasComunesDeCopropiedad = cache(async (copropiedadId: string) 
   const zonas = await prisma.zonaComun.findMany({
     where: { copropiedadId, deletedAt: null, activa: true },
     orderBy: { nombre: "asc" },
-    select: { id: true, nombre: true, descripcion: true, aforo: true, costo: true },
+    select: {
+      id: true,
+      nombre: true,
+      descripcion: true,
+      aforo: true,
+      costo: true,
+      periodicidadCosto: true,
+    },
   });
 
   return zonas.map((zona) => ({ ...zona, costo: Number(zona.costo) }));

@@ -88,7 +88,7 @@ import {
   Td,
   Th,
 } from "@/components/ui/primitivos";
-import { decimalComa, etiquetaTorre, TORRE_VACIA_PARAM } from "@/lib/formatters";
+import { decimalComa, formatearMoneda, etiquetaTorre, TORRE_VACIA_PARAM } from "@/lib/formatters";
 
 /**
  * Las subpáginas del dashboard viven en una sola ruta dinámica en vez de
@@ -482,6 +482,7 @@ async function SeccionUnidades({ copropiedad }: { copropiedad: CopropiedadActiva
                   <Th>Torre</Th>
                   <Th className="text-right">Coeficiente</Th>
                   <Th className="text-right">Área m²</Th>
+                  <Th className="text-right">Cuota mensual</Th>
                   <Th>Estado</Th>
                   <Th />
                 </tr>
@@ -493,6 +494,11 @@ async function SeccionUnidades({ copropiedad }: { copropiedad: CopropiedadActiva
                     <Td>{etiquetaTorre(unidad.torre)}</Td>
                     <Td className="text-right tabular-nums">{decimalComa(unidad.coeficiente)} %</Td>
                     <Td className="text-right tabular-nums">{unidad.areaM2 ? decimalComa(unidad.areaM2) : "—"}</Td>
+                    <Td className="text-right tabular-nums">
+                      {unidad.cuotaAdministracion !== "0"
+                        ? formatearMoneda(unidad.cuotaAdministracion)
+                        : "—"}
+                    </Td>
                     <Td>
                       <Etiqueta tono={unidad.estado === "OCUPADO" ? "exito" : "neutro"}>
                         {ETIQUETAS_ESTADO_INMUEBLE[unidad.estado]}

@@ -54,9 +54,11 @@ function Paso({
 export function PrimerosPasos({
   progreso,
   totalUnidades,
+  unidadesConCuota = 0,
 }: {
   progreso: ProgresoPrimerosPasos;
   totalUnidades: number;
+  unidadesConCuota?: number;
 }) {
   const hechos = Object.values(progreso).filter(Boolean).length;
   const enlace = `${CLASES_BOTON} bg-brand-600 text-white hover:bg-brand-700`;
@@ -114,7 +116,7 @@ export function PrimerosPasos({
                   description="Crea una cuenta por cada unidad activa, repartiendo el total de administración según el coeficiente."
                   icon={<ReceiptText className="h-4 w-4" />}
                 >
-                  <GenerarCuentasForm totalUnidades={totalUnidades} />
+                  <GenerarCuentasForm totalUnidades={totalUnidades} unidadesConCuota={unidadesConCuota} />
                 </FormPanel>
               ) : (
                 <span className="text-xs text-zinc-400">Primero agrega unidades</span>

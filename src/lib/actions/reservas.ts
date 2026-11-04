@@ -16,6 +16,7 @@ import {
   actualizarEstadoReservaSchema,
   crearReservaSchema,
   crearZonaComunSchema,
+  editarZonaComunSchema,
 } from "@/lib/validations/reservas";
 import type { EstadoAccionFormulario } from "@/lib/types/estado-accion";
 
@@ -29,7 +30,8 @@ export async function crearZonaComun(
     nombre: formData.get("nombre"),
     descripcion: formData.get("descripcion") ?? "",
     aforo: formData.get("aforo"),
-    costo: formData.get("costo") ?? "0",
+    costo: formData.get("costo") || "0",
+    periodicidadCosto: formData.get("periodicidadCosto"),
   });
 
   if (!validado.success) {
@@ -40,7 +42,7 @@ export async function crearZonaComun(
     };
   }
 
-  const { nombre, descripcion, aforo, costo } = validado.data;
+  const { nombre, descripcion, aforo, costo, periodicidadCosto } = validado.data;
 
   try {
     const { copropiedad } = await getContextoAdministrador();
@@ -59,6 +61,7 @@ export async function crearZonaComun(
         descripcion: descripcion || null,
         aforo,
         costo: new Prisma.Decimal(costo),
+        periodicidadCosto,
       },
     });
 
@@ -68,6 +71,59 @@ export async function crearZonaComun(
   } catch (error) {
     console.error("crearZonaComun", error);
     return { status: "error", message: "No se pudo crear la zona común." };
+  }
+}
+
+/** Edita nombre, aforo, costo y periodicidad de una zona de la copropiedad ACTIVA. */
+export async function actualizarZonaComun(
+  _prevState: EstadoAccionReserva,
+  formData: FormData
+): Promise<EstadoAccionReserva> {
+  const validado = editarZonaComunSchema.safeParse({
+    zonaId: formData.get("zonaId"),
+    nombre: formData.get("nombre"),
+    descripcion: formData.get("descripcion") ?? "",
+    aforo: formData.get("aforo"),
+    costo: formData.get("costo") || "0",
+    periodicidadCosto: formData.get("periodicidadCosto"),
+  });
+
+  if (!validado.success) {
+    return {
+      status: "error",
+      message: "Revisa los datos del formulario.",
+      errores: z.flattenError(validado.error).fieldErrors,
+    };
+  }
+
+  const { zonaId, nombre, descripcion, aforo, costo, periodicidadCosto } = validado.data;
+
+  try {
+    const { copropiedad } = await getContextoAdministrador();
+    if (!copropiedad) {
+      return { status: "error", message: "No tienes una copropiedad asignada todavía." };
+    }
+
+    const resultado = await prisma.zonaComun.updateMany({
+      where: { id: zonaId, copropiedadId: copropiedad.id, deletedAt: null },
+      data: {
+        nombre,
+        descripcion: descripcion || null,
+        aforo,
+        costo: new Prisma.Decimal(costo),
+        periodicidadCosto,
+      },
+    });
+    if (resultado.count === 0) {
+      return { status: "error", message: "La zona no existe en esta copropiedad." };
+    }
+
+    revalidatePath("/dashboard/reservas");
+    revalidatePath("/portal/reservas");
+    return { status: "success", message: `"${nombre}" actualizada.` };
+  } catch (error) {
+    console.error("actualizarZonaComun", error);
+    return { status: "error", message: "No se pudo actualizar la zona común." };
   }
 }
 

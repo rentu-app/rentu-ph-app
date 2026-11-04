@@ -37,6 +37,7 @@ function leerCampos(formData: FormData) {
     identificador: formData.get("identificador"),
     coeficiente: formData.get("coeficiente"),
     areaM2: formData.get("areaM2") ?? "",
+    cuotaAdministracion: formData.get("cuotaAdministracion") ?? "",
     estado: formData.get("estado"),
   };
 }
@@ -60,11 +61,12 @@ export async function crearUnidad(
     };
   }
 
-  const { torre, identificador, coeficiente, areaM2, estado } = validado.data;
+  const { torre, identificador, coeficiente, areaM2, cuotaAdministracion, estado } = validado.data;
   const datos = {
     torre,
     coeficiente: new Prisma.Decimal(coeficiente),
     areaM2: areaM2 ? new Prisma.Decimal(areaM2) : null,
+    cuotaAdministracion: new Prisma.Decimal(cuotaAdministracion),
     estado,
   };
 
@@ -122,7 +124,8 @@ export async function actualizarUnidad(
     };
   }
 
-  const { inmuebleId, torre, identificador, coeficiente, areaM2, estado } = validado.data;
+  const { inmuebleId, torre, identificador, coeficiente, areaM2, cuotaAdministracion, estado } =
+    validado.data;
 
   try {
     const { copropiedad } = await getContextoAdministrador();
@@ -155,6 +158,7 @@ export async function actualizarUnidad(
         identificador,
         coeficiente: new Prisma.Decimal(coeficiente),
         areaM2: areaM2 ? new Prisma.Decimal(areaM2) : null,
+        cuotaAdministracion: new Prisma.Decimal(cuotaAdministracion),
         estado,
       },
     });

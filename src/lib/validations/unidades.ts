@@ -33,6 +33,13 @@ export const unidadManualSchema = z.object({
     return resultado.fraccion;
   }),
   areaM2: filaUnidadSchema.shape.areaM2,
+  // Cuota mensual propia (pesos enteros); vacío o 0 = se reparte por coeficiente.
+  cuotaAdministracion: z
+    .string()
+    .trim()
+    .regex(/^\d{0,10}$/, "Cuota inválida")
+    .optional()
+    .transform((valor) => valor || "0"),
   estado: z.enum(EstadoInmueble),
 });
 

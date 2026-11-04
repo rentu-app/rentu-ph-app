@@ -14,6 +14,7 @@ type UnidadFila = {
   torre: string;
   coeficiente: string;
   areaM2: string;
+  cuotaAdministracion: string;
   estado: EstadoInmueble;
 };
 

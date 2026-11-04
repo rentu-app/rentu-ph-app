@@ -244,6 +244,9 @@ model Inmueble {
   // forma explícita (queda registrada en `GestionCobro`); ningún job la
   // escala solo.
   etapaCobro    EtapaCobro     @default(AL_DIA)
+  // Cuota mensual propia de la unidad (como la columna "Cuota Mensual" del
+  // control en Excel). 0 = sin cuota fija: se reparte por coeficiente.
+  cuotaAdministracion Decimal @default(0) @db.Decimal(12, 2)
 
   // --- DEPRECADO: campos del marketplace de arriendo -----------------------
   // El MVP dejó de ser un marketplace de arriendos (ver README). Estos
@@ -587,6 +590,7 @@ model ZonaComun {
   descripcion   String?
   aforo         Int
   costo         Decimal   @default(0) @db.Decimal(12, 2)
+  periodicidadCosto PeriodicidadCosto @default(POR_USO)
   activa        Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -728,4 +732,12 @@ model OrdenServicio {
   @@index([prestadorId])
   @@index([estado])
   @@map("ordenes_servicio")
+}
+
+enum PeriodicidadCosto {
+  POR_USO
+  POR_HORA
+  POR_DIA
+  SEMANAL
+  MENSUAL
 }

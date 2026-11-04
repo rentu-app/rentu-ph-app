@@ -23,6 +23,8 @@ export function InputMoneda({
   placeholder = "$ 0",
   required,
   className,
+  value,
+  onValueChange,
 }: {
   name: string;
   id?: string;
@@ -30,8 +32,16 @@ export function InputMoneda({
   placeholder?: string;
   required?: boolean;
   className?: string;
+  /** Modo controlado (solo dígitos): el padre puede vaciarlo, p. ej. tras guardar. */
+  value?: string;
+  onValueChange?: (digitos: string) => void;
 }) {
-  const [digitos, setDigitos] = useState(soloDigitos(defaultValue.split(".")[0]));
+  const [interno, setInterno] = useState(soloDigitos(defaultValue.split(".")[0]));
+  const digitos = value ?? interno;
+  const setDigitos = (nuevo: string) => {
+    setInterno(nuevo);
+    onValueChange?.(nuevo);
+  };
 
   return (
     <>

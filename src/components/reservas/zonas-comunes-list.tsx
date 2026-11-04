@@ -1,6 +1,8 @@
 import type { ZonaComunResumen } from "@/lib/data/reservas";
 import { EstadoVacio, Etiqueta } from "@/components/ui/primitivos";
 import { formatearMoneda } from "@/lib/formatters";
+import { ETIQUETAS_PERIODICIDAD } from "@/lib/validations/reservas";
+import { EditarZonaComun } from "@/components/reservas/editar-zona-comun";
 
 export function ZonasComunesList({ zonas }: { zonas: ZonaComunResumen[] }) {
   if (zonas.length === 0) {
@@ -31,8 +33,15 @@ export function ZonasComunesList({ zonas }: { zonas: ZonaComunResumen[] }) {
 
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-zinc-100 pt-4 text-sm text-zinc-600">
             <span>Aforo {zona.aforo}</span>
-            <span>{zona.costo > 0 ? formatearMoneda(zona.costo) : "Sin costo"}</span>
+            <span>
+              {zona.costo > 0
+                ? `${formatearMoneda(zona.costo)} ${ETIQUETAS_PERIODICIDAD[zona.periodicidadCosto]}`
+                : "Sin costo"}
+            </span>
             <span className="text-zinc-500">{zona._count.reservas} reservas</span>
+            <span className="ml-auto">
+              <EditarZonaComun zona={zona} />
+            </span>
           </div>
         </li>
       ))}

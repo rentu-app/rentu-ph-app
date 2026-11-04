@@ -4,6 +4,7 @@ import { useActionState, useId } from "react";
 import { crearReservaResidente } from "@/lib/actions/reservas";
 import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
 import type { ZonaComunParaResidente } from "@/lib/data/reservas";
+import { ETIQUETAS_PERIODICIDAD } from "@/lib/validations/reservas";
 import { BotonSubmit } from "@/components/ui/boton";
 import { CLASES_CONTROL, Campo, MensajeAccion } from "@/components/ui/formulario";
 import { Tarjeta } from "@/components/ui/primitivos";
@@ -43,7 +44,9 @@ export function CrearReservaForm({ zonas }: { zonas: ZonaComunParaResidente[] })
             {zonas.map((zona) => (
               <option key={zona.id} value={zona.id}>
                 {zona.nombre} · aforo {zona.aforo}
-                {zona.costo > 0 ? ` · ${formatearMoneda(zona.costo)}` : " · sin costo"}
+                {zona.costo > 0
+                  ? ` · ${formatearMoneda(zona.costo)} ${ETIQUETAS_PERIODICIDAD[zona.periodicidadCosto]}`
+                  : " · sin costo"}
               </option>
             ))}
           </select>

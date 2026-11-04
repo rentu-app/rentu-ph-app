@@ -1,7 +1,8 @@
 "use client";
 
 import { decimalComa } from "@/lib/formatters";
-import { startTransition, useActionState, useEffect, useId, useRef, type FormEvent } from "react";
+import { InputMoneda } from "@/components/ui/input-moneda";
+import { startTransition, useActionState, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { EstadoInmueble } from "@prisma/client";
 import { actualizarUnidad, crearUnidad } from "@/lib/actions/unidades";
 import { ESTADO_INICIAL_ACCION } from "@/lib/types/estado-accion";
@@ -14,6 +15,7 @@ type ValoresUnidad = {
   torre: string;
   coeficiente: string;
   areaM2: string;
+  cuotaAdministracion: string;
   estado: EstadoInmueble;
 };
 
@@ -49,9 +51,20 @@ export function UnidadForm({
   const idCoeficiente = useId();
   const idArea = useId();
   const idEstado = useId();
+  const idCuota = useId();
   const identificadorRef = useRef<HTMLInputElement>(null);
   const coeficienteRef = useRef<HTMLInputElement>(null);
   const areaRef = useRef<HTMLInputElement>(null);
+  const [cuota, setCuota] = useState(
+    unidad?.cuotaAdministracion && unidad.cuotaAdministracion !== "0" ? unidad.cuotaAdministracion : ""
+  );
+
+  // Vaciar la cuota al guardar (patrón "ajustar estado durante el render").
+  const [estadoPrevio, setEstadoPrevio] = useState(estado);
+  if (estado !== estadoPrevio) {
+    setEstadoPrevio(estado);
+    if (modo === "crear" && estado.status === "success") setCuota("");
+  }
 
   useEffect(() => {
     if (estado.status !== "success") return;
@@ -144,6 +157,22 @@ export function UnidadForm({
             inputMode="decimal"
             defaultValue={decimalComa(unidad?.areaM2 ?? "")}
             placeholder="72,50"
+            className={`${CLASES_CONTROL} tabular-nums`}
+          />
+        </Campo>
+
+        <Campo
+          etiqueta="Cuota de administración (opcional)"
+          htmlFor={idCuota}
+          error={estado.errores?.cuotaAdministracion?.[0]}
+          ayuda="Cuota mensual propia de esta unidad. Si la dejas vacía, se reparte por coeficiente."
+          className="sm:col-span-2"
+        >
+          <InputMoneda
+            id={idCuota}
+            name="cuotaAdministracion"
+            value={cuota}
+            onValueChange={setCuota}
             className={`${CLASES_CONTROL} tabular-nums`}
           />
         </Campo>
