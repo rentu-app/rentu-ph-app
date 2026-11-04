@@ -64,14 +64,14 @@ export function PorQueRentu() {
             </p>
           </div>
           <Link
-            href="/login"
+            href="/#entrar-demo"
             className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-md bg-accent-400 px-6 text-base font-semibold text-zinc-900 transition-colors hover:bg-accent-300"
           >
             Entrar a la demo
           </Link>
         </div>
 
-        <p className="mt-6 text-center text-xs text-zinc-500">
+        <p className="mt-6 text-center text-sm text-zinc-500">
           Rentu no es un sistema de contabilidad, facturación electrónica, pagos
           bancarios, nómina, firma de contratos ni gestión judicial. Las etapas
           prejurídico y jurídico son clasificaciones de seguimiento, no asesoría

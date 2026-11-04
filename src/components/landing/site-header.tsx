@@ -34,10 +34,10 @@ export function SiteHeader() {
 
         <div className="hidden items-center gap-2 whitespace-nowrap lg:flex">
           <Link
-            href="/registro"
+            href="/#entrar-demo"
             className="inline-flex min-h-11 items-center rounded-md border border-zinc-300 px-4 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50"
           >
-            Registrar mi copropiedad
+            Entrar a la demo
           </Link>
           <Link
             href="/login"
