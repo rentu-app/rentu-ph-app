@@ -12,8 +12,8 @@ commitear y subir), actualiza la versión tú mismo, sin esperar a que te lo pid
    - **patch** (0.3.0 → 0.3.1): solo correcciones, textos o ajustes visuales sin funcionalidad nueva.
    - **major**: solo si el equipo lo decide explícitamente.
 2. Si dos ramas suben la versión a la vez, al fusionar queda la mayor; revisa que no se repita ni retroceda.
-3. Menciónala en el mensaje del commit (p. ej. "v0.4.0: …") y en tu respuesta final.
+3. Añade una entrada arriba en `CHANGELOG.md` (secciones Añadido / Cambiado / Corregido, con la fecha) y menciona la versión en el mensaje del commit (p. ej. "v0.4.0: …") y en tu respuesta final.
 4. No cambies la versión en commits que no son una versión nueva (solo notas, refactors internos o pruebas).
 5. Verifica con `pnpm build` que el pie muestra la versión nueva antes de dar el trabajo por terminado.
 
-No hagas merge a `main` por tu cuenta: la versión se sube en la rama de trabajo y se fusiona solo cuando el equipo lo pida.
+No hagas merge a `main` por tu cuenta: la versión se sube en la rama de trabajo y se fusiona solo cuando el equipo lo pida. Una vez fusionada a `main`, crea la etiqueta de git de esa versión (`git tag -a vX.Y.Z -m "…"` sobre el commit de `main` y `git push origin vX.Y.Z`).

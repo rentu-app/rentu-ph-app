@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { COLOR_TEMA, DESCRIPCION_APP, TITULO_APP } from "@/lib/marca";
+import { RegistrarServiceWorker } from "@/components/pwa/registrar-service-worker";
 import { VersionApp } from "@/components/ui/version-app";
 
 const geistSans = Geist({
@@ -13,14 +15,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const TITULO = "Rentu PH · Gestión inteligente de Propiedad Horizontal";
-const DESCRIPCION =
-  "La plataforma de gestión para administradores de Propiedad Horizontal: cartera, PQRS, reservas y un Copiloto Administrativo con IA.";
+const TITULO = TITULO_APP;
+const DESCRIPCION = DESCRIPCION_APP;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://rentu-ph-app-rho.vercel.app"),
   title: TITULO,
   description: DESCRIPCION,
+  // iPhone: al "Agregar a inicio" abre en pantalla completa con el nombre corto.
+  appleWebApp: { capable: true, title: "Rentu", statusBarStyle: "default" },
   openGraph: {
     title: TITULO,
     description: DESCRIPCION,
@@ -48,6 +51,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: COLOR_TEMA,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -58,6 +62,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col font-sans">
         {children}
+        <RegistrarServiceWorker />
         <VersionApp />
       </body>
     </html>
