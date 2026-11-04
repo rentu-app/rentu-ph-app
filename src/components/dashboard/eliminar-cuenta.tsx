@@ -14,7 +14,7 @@ export function EliminarCuenta({ email, esDemo }: { email: string; esDemo: boole
   const [estado, accion, pendiente] = useActionState(eliminarMiCuenta, ESTADO_INICIAL_ACCION);
   const idEmail = useId();
 
-  const coincide = escrito.trim() === email;
+  const coincide = escrito.trim().toLowerCase() === email.trim().toLowerCase();
 
   function alEnviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();

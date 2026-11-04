@@ -49,7 +49,8 @@ export async function generarCuentasDeCobroMensual(
   const validado = generarCuentasDeCobroSchema.safeParse({
     periodo: formData.get("periodo"),
     modo: formData.get("modo") ?? "coeficiente",
-    montoAdministracionTotal: formData.get("montoAdministracionTotal"),
+    // En modo "cuota" el campo ni se renderiza: llega null.
+    montoAdministracionTotal: formData.get("montoAdministracionTotal") ?? "",
     montoExpensasPorInmueble: formData.get("montoExpensasPorInmueble") || "0",
     fechaLimitePago: formData.get("fechaLimitePago"),
   });

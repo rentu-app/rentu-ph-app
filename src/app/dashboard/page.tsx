@@ -96,6 +96,8 @@ export default async function DashboardPage() {
         <PrimerosPasos
           progreso={progreso}
           totalUnidades={copropiedad.totalUnidades}
+          unidadesConCuota={unidadesConCuota}
+          totalRubros={totalRubros}
         />
       </div>
     );
@@ -107,8 +109,11 @@ export default async function DashboardPage() {
         titulo={`Hola, ${administrador.nombre.split(" ")[0]}`}
         descripcion={`Estado de la cartera de ${copropiedad.nombre}.`}
         accion={
-          completo ? (
-            <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {/* Cada botón aparece solo si el checklist ya no lo ofrece:
+                "Generar cuentas" cuando la primera cuenta ya existe y
+                "Agregar unidades" siempre (aquí ya hay unidades). */}
+            {progreso.cuentaDeCobro ? (
               <FormPanel
                 triggerLabel="Generar cuentas"
                 title="Generar cuentas de cobro del periodo"
@@ -121,15 +126,15 @@ export default async function DashboardPage() {
                   totalRubros={totalRubros}
                 />
               </FormPanel>
-              <Link
-                href="/dashboard/unidades"
-                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent-500 px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-accent-400 sm:w-auto"
-              >
-                <FileUp className="h-4 w-4" />
-                Agregar unidades
-              </Link>
-            </div>
-          ) : undefined
+            ) : null}
+            <Link
+              href="/dashboard/unidades"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-accent-500 px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:bg-accent-400 sm:w-auto"
+            >
+              <FileUp className="h-4 w-4" />
+              Agregar unidades
+            </Link>
+          </div>
         }
       />
 
@@ -137,6 +142,8 @@ export default async function DashboardPage() {
         <PrimerosPasos
           progreso={progreso}
           totalUnidades={copropiedad.totalUnidades}
+          unidadesConCuota={unidadesConCuota}
+          totalRubros={totalRubros}
         />
       )}
 
