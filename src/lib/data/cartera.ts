@@ -95,6 +95,7 @@ const cargarCarteraCruda = cache(async (copropiedadId: string) => {
       torre: true,
       coeficiente: true,
       areaM2: true,
+      cuotaAdministracion: true,
       estado: true,
       etapaCobro: true,
       residentes: {
@@ -158,6 +159,8 @@ export type UnidadCartera = {
   torre: string;
   coeficiente: number;
   areaM2: number | null;
+  /** Cuota mensual propia de la unidad (0 = se reparte por coeficiente). */
+  cuotaMensual: number;
   estado: EstadoInmueble;
   etapaCobro: EtapaCobro;
   saldoTotal: number;
@@ -236,6 +239,7 @@ function armarUnidad(inmueble: InmuebleCrudo, referencia: Date): UnidadCartera {
     torre: inmueble.torre,
     coeficiente: Number(inmueble.coeficiente),
     areaM2: inmueble.areaM2 === null ? null : Number(inmueble.areaM2),
+    cuotaMensual: Number(inmueble.cuotaAdministracion),
     estado: inmueble.estado,
     etapaCobro: inmueble.etapaCobro,
     saldoTotal: Number(saldoTotal),

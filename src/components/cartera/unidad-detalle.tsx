@@ -4,6 +4,7 @@ import {
   ClipboardList,
   Mail,
   MessageSquare,
+  ReceiptText,
   User,
 } from "lucide-react";
 import type { DetalleUnidad } from "@/lib/data/cartera";
@@ -29,6 +30,8 @@ import {
   ETIQUETAS_ETAPA_COBRO,
   ETIQUETAS_TIPO_GESTION,
 } from "@/lib/validations/cartera";
+import { GenerarCuentaUnidadForm } from "@/components/cartera/generar-cuenta-unidad-form";
+import { EditarCuenta } from "@/components/cartera/editar-cuenta";
 import { decimalComa, formatearFecha, formatearMoneda, formatearPeriodo } from "@/lib/formatters";
 
 const ETIQUETAS_ROL: Record<string, string> = {
@@ -52,6 +55,11 @@ export function UnidadDetalle({
   unidad: DetalleUnidad;
   hrefVolver: string;
 }) {
+  const totalFacturado = unidad.cuentas.reduce(
+    (suma, cuenta) => suma + cuenta.totalAPagar,
+    0
+  );
+  const totalPagado = unidad.cuentas.reduce((suma, cuenta) => suma + cuenta.montoPagado, 0);
   const correos = unidad.residentes
     .map((residente) => residente.email)
     .filter(Boolean);
@@ -90,7 +98,7 @@ export function UnidadDetalle({
         </div>
       </div>
 
-      <Tarjeta className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-4 sm:p-5">
+      <Tarjeta className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-3 sm:p-5">
         <Dato etiqueta="Saldo total">
           <span className="font-semibold tabular-nums">
             {formatearMoneda(unidad.saldoTotal)}
@@ -103,6 +111,14 @@ export function UnidadDetalle({
             }`}
           >
             {formatearMoneda(unidad.saldoVencido)}
+          </span>
+        </Dato>
+        <Dato etiqueta="Total facturado">
+          <span className="tabular-nums">{formatearMoneda(totalFacturado)}</span>
+        </Dato>
+        <Dato etiqueta="Total pagado">
+          <span className="font-semibold tabular-nums text-emerald-700">
+            {formatearMoneda(totalPagado)}
           </span>
         </Dato>
         <Dato etiqueta="Cuotas pendientes">{unidad.cuentasPendientes}</Dato>
@@ -125,6 +141,18 @@ export function UnidadDetalle({
           <RegistrarGestionForm
             inmuebleId={unidad.id}
             etapaActual={unidad.etapaCobro}
+          />
+        </FormPanel>
+
+        <FormPanel
+          triggerLabel="Generar cuenta"
+          title={`Nueva cuenta · ${unidad.identificador}`}
+          description="Crea la cuota de un periodo solo para esta unidad."
+          icon={<ReceiptText className="h-4 w-4" />}
+        >
+          <GenerarCuentaUnidadForm
+            inmuebleId={unidad.id}
+            cuotaSugerida={unidad.cuotaMensual}
           />
         </FormPanel>
 
@@ -210,7 +238,18 @@ export function UnidadDetalle({
                           : ""}
                       </p>
                     </div>
-                    <EstadoCuentaBadge estado={cuenta.estado} />
+                    <div className="flex items-center gap-2">
+                      <EditarCuenta
+                        cuenta={{
+                          id: cuenta.id,
+                          periodo: cuenta.periodo,
+                          montoAdministracion: cuenta.cuotaAdministracion,
+                          montoExpensas: cuenta.expensas,
+                          fechaLimitePago: new Date(cuenta.fechaLimitePago).toISOString().slice(0, 10),
+                        }}
+                      />
+                      <EstadoCuentaBadge estado={cuenta.estado} />
+                    </div>
                   </div>
 
                   {/* No se muestra "saldo anterior": las cuotas son

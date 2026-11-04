@@ -11,11 +11,7 @@ import {
   MessageSquarePlus,
   UserPlus,
 } from "lucide-react";
-import {
-  EstadoOrdenServicio,
-  EstadoPQRS,
-  EstadoReserva,
-} from "@prisma/client";
+import { EstadoOrdenServicio, EstadoPQRS, EstadoReserva } from "@prisma/client";
 import { esCuentaDemo } from "@/lib/demo";
 import { EliminarCuenta } from "@/components/dashboard/eliminar-cuenta";
 import { getContextoAdministrador } from "@/lib/session";
@@ -51,6 +47,7 @@ import { ImportarUnidadesForm } from "@/components/cartera/importar-unidades-for
 import { ETIQUETAS_ESTADO_INMUEBLE } from "@/lib/validations/unidades";
 import { FILA_CSV_ESPERADA } from "@/lib/validations/cartera";
 import { KpisCartera } from "@/components/cartera/resumen-cartera";
+import { MatrizCartera } from "@/components/cartera/matriz-cartera";
 import { UnidadesTabla } from "@/components/cartera/unidades-tabla";
 import { UnidadDetalle } from "@/components/cartera/unidad-detalle";
 import { CrearPqrsForm } from "@/components/pqrs/crear-pqrs-form";
@@ -88,7 +85,12 @@ import {
   Td,
   Th,
 } from "@/components/ui/primitivos";
-import { decimalComa, formatearMoneda, etiquetaTorre, TORRE_VACIA_PARAM } from "@/lib/formatters";
+import {
+  decimalComa,
+  formatearMoneda,
+  etiquetaTorre,
+  TORRE_VACIA_PARAM,
+} from "@/lib/formatters";
 
 /**
  * Las subpáginas del dashboard viven en una sola ruta dinámica en vez de
@@ -125,7 +127,7 @@ const TITULOS: Record<Seccion, string> = {
 };
 
 export async function generateMetadata(
-  props: PageProps<"/dashboard/[section]">
+  props: PageProps<"/dashboard/[section]">,
 ): Promise<Metadata> {
   const { section } = await props.params;
   if (!esSeccionValida(section)) return {};
@@ -134,13 +136,16 @@ export async function generateMetadata(
 
 type SearchParams = Awaited<PageProps<"/dashboard/[section]">["searchParams"]>;
 
-function leerParam(searchParams: SearchParams, clave: string): string | undefined {
+function leerParam(
+  searchParams: SearchParams,
+  clave: string,
+): string | undefined {
   const valor = searchParams[clave];
   return typeof valor === "string" && valor.length > 0 ? valor : undefined;
 }
 
 export default async function DashboardSeccionPage(
-  props: PageProps<"/dashboard/[section]">
+  props: PageProps<"/dashboard/[section]">,
 ) {
   const { section } = await props.params;
   // La sección se llamaba "configuracion": se conservan los enlaces viejos.
@@ -156,7 +161,9 @@ export default async function DashboardSeccionPage(
       <div className="flex flex-col gap-8">
         <EncabezadoPagina titulo="Cuenta" descripcion="Tu acceso a Rentu." />
         <Tarjeta className="flex flex-col gap-1 p-5">
-          <p className="text-sm font-semibold text-zinc-900">{administrador.nombre}</p>
+          <p className="text-sm font-semibold text-zinc-900">
+            {administrador.nombre}
+          </p>
           <p className="text-sm text-zinc-500">{administrador.email}</p>
           <form action={cerrarSesion} className="mt-3">
             <button
@@ -170,14 +177,19 @@ export default async function DashboardSeccionPage(
         </Tarjeta>
         <Tarjeta className="flex flex-col gap-3 border-red-200 p-5">
           <div>
-            <h2 className="text-base font-semibold text-red-700">Eliminar mi cuenta</h2>
+            <h2 className="text-base font-semibold text-red-700">
+              Eliminar mi cuenta
+            </h2>
             <p className="mt-0.5 text-sm text-zinc-500">
-              Cierra tu acceso y elimina las copropiedades que solo tú administras. Podrás volver a
-              registrarte con el mismo correo.
+              Cierra tu acceso y elimina las copropiedades que solo tú
+              administras. Podrás volver a registrarte con el mismo correo.
             </p>
           </div>
           <div>
-            <EliminarCuenta email={administrador.email} esDemo={esCuentaDemo(administrador.email)} />
+            <EliminarCuenta
+              email={administrador.email}
+              esDemo={esCuentaDemo(administrador.email)}
+            />
           </div>
         </Tarjeta>
       </div>
@@ -195,13 +207,22 @@ export default async function DashboardSeccionPage(
 
   switch (section) {
     case "cartera":
-      return <SeccionCartera copropiedad={copropiedad} searchParams={searchParams} />;
+      return (
+        <SeccionCartera copropiedad={copropiedad} searchParams={searchParams} />
+      );
     case "unidades":
       return <SeccionUnidades copropiedad={copropiedad} />;
     case "reservas":
-      return <SeccionReservas copropiedad={copropiedad} searchParams={searchParams} />;
+      return (
+        <SeccionReservas
+          copropiedad={copropiedad}
+          searchParams={searchParams}
+        />
+      );
     case "pqrs":
-      return <SeccionPqrs copropiedad={copropiedad} searchParams={searchParams} />;
+      return (
+        <SeccionPqrs copropiedad={copropiedad} searchParams={searchParams} />
+      );
     case "residentes":
       return <SeccionResidentes copropiedad={copropiedad} />;
     case "prestadores":
@@ -238,7 +259,9 @@ async function SeccionCartera({
   const torre = leerParam(searchParams, "torre");
   // "sin-torre" en la URL = unidades con torre "" (el filtro vacío ya significa "todas").
   const torreFiltro = torre === TORRE_VACIA_PARAM ? "" : torre;
-  const hayTorres = !(copropiedad.torres.length === 1 && copropiedad.torres[0].nombre === "");
+  const hayTorres = !(
+    copropiedad.torres.length === 1 && copropiedad.torres[0].nombre === ""
+  );
   const situacionParam = leerParam(searchParams, "situacion");
   const situacion = SITUACIONES.some((item) => item.valor === situacionParam)
     ? situacionParam
@@ -250,9 +273,20 @@ async function SeccionCartera({
     : undefined;
   const dirOrden = leerParam(searchParams, "dir") === "desc" ? "desc" : "asc";
 
+  const vistaMeses = leerParam(searchParams, "vista") === "meses";
+  const anioParam = Number(leerParam(searchParams, "anio"));
+  const anio =
+    Number.isInteger(anioParam) && anioParam >= 2000 && anioParam <= 2100
+      ? anioParam
+      : new Date().getFullYear();
+
   const parametrosLista = new URLSearchParams();
   if (torre) parametrosLista.set("torre", torre);
   if (situacion) parametrosLista.set("situacion", situacion);
+  if (vistaMeses) {
+    parametrosLista.set("vista", "meses");
+    parametrosLista.set("anio", String(anio));
+  }
   if (columnaOrden) {
     parametrosLista.set("orden", columnaOrden);
     parametrosLista.set("dir", dirOrden);
@@ -269,14 +303,31 @@ async function SeccionCartera({
   function hrefCon(cambios: { torre?: string; situacion?: string }) {
     const parametros = new URLSearchParams();
     const torreFinal = "torre" in cambios ? cambios.torre : torre;
-    const situacionFinal = "situacion" in cambios ? cambios.situacion : situacion;
+    const situacionFinal =
+      "situacion" in cambios ? cambios.situacion : situacion;
     if (torreFinal) parametros.set("torre", torreFinal);
     if (situacionFinal) parametros.set("situacion", situacionFinal);
+    if (vistaMeses) {
+      parametros.set("vista", "meses");
+      parametros.set("anio", String(anio));
+    }
     if (columnaOrden) {
       parametros.set("orden", columnaOrden);
       parametros.set("dir", dirOrden);
     }
     const sufijo = parametros.toString();
+    return `/dashboard/cartera${sufijo ? `?${sufijo}` : ""}`;
+  }
+
+  function hrefVista(meses: boolean) {
+    const p = new URLSearchParams();
+    if (torre) p.set("torre", torre);
+    if (situacion) p.set("situacion", situacion);
+    if (meses) {
+      p.set("vista", "meses");
+      p.set("anio", String(anio));
+    }
+    const sufijo = p.toString();
     return `/dashboard/cartera${sufijo ? `?${sufijo}` : ""}`;
   }
 
@@ -291,6 +342,15 @@ async function SeccionCartera({
         <KpisDeCartera copropiedadId={copropiedad.id} />
       </Suspense>
 
+      <FilaFiltros etiquetaAccesible="Tipo de vista">
+        <FiltroPill href={hrefVista(false)} activo={!vistaMeses}>
+          Lista
+        </FiltroPill>
+        <FiltroPill href={hrefVista(true)} activo={vistaMeses}>
+          Tabla por meses
+        </FiltroPill>
+      </FilaFiltros>
+
       <div className="flex flex-col gap-3">
         {hayTorres ? (
           <FilaFiltros etiquetaAccesible="Filtrar por torre">
@@ -298,7 +358,8 @@ async function SeccionCartera({
               Todas las torres
             </FiltroPill>
             {copropiedad.torres.map((item) => {
-              const valor = item.nombre === "" ? TORRE_VACIA_PARAM : item.nombre;
+              const valor =
+                item.nombre === "" ? TORRE_VACIA_PARAM : item.nombre;
               return (
                 <FiltroPill
                   key={valor}
@@ -326,31 +387,69 @@ async function SeccionCartera({
       </div>
 
       <Suspense fallback={<Skeleton className="h-64" />}>
-        <ListaUnidades
-          copropiedadId={copropiedad.id}
-          torre={torreFiltro}
-          situacion={situacion}
-          sufijoLista={sufijoLista}
-          orden={columnaOrden ? { columna: columnaOrden, dir: dirOrden } : undefined}
-          hrefOrden={(columna) => {
-            const p = new URLSearchParams();
-            if (torre) p.set("torre", torre);
-            if (situacion) p.set("situacion", situacion);
-            p.set("orden", columna);
-            p.set("dir", columna === columnaOrden && dirOrden === "asc" ? "desc" : "asc");
-            return `/dashboard/cartera?${p.toString()}`;
-          }}
-        />
+        {vistaMeses ? (
+          <MatrizUnidades
+            copropiedadId={copropiedad.id}
+            torre={torreFiltro}
+            situacion={situacion}
+            sufijoLista={sufijoLista}
+            anio={anio}
+            hrefAnio={(nuevo) => {
+              const p = new URLSearchParams();
+              if (torre) p.set("torre", torre);
+              if (situacion) p.set("situacion", situacion);
+              p.set("vista", "meses");
+              p.set("anio", String(nuevo));
+              return `/dashboard/cartera?${p.toString()}`;
+            }}
+          />
+        ) : (
+          <ListaUnidades
+            copropiedadId={copropiedad.id}
+            torre={torreFiltro}
+            situacion={situacion}
+            sufijoLista={sufijoLista}
+            orden={
+              columnaOrden
+                ? { columna: columnaOrden, dir: dirOrden }
+                : undefined
+            }
+            hrefOrden={(columna) => {
+              const p = new URLSearchParams();
+              if (torre) p.set("torre", torre);
+              if (situacion) p.set("situacion", situacion);
+              p.set("orden", columna);
+              p.set(
+                "dir",
+                columna === columnaOrden && dirOrden === "asc" ? "desc" : "asc",
+              );
+              return `/dashboard/cartera?${p.toString()}`;
+            }}
+          />
+        )}
       </Suspense>
     </div>
   );
 }
 
-const ORDENES_CARTERA = ["unidad", "torre", "saldo", "vencido", "mora", "etapa", "pago"] as const;
+const ORDENES_CARTERA = [
+  "unidad",
+  "torre",
+  "saldo",
+  "vencido",
+  "mora",
+  "etapa",
+  "pago",
+] as const;
 type ColumnaOrden = (typeof ORDENES_CARTERA)[number];
 
-function compararPor(columna: ColumnaOrden, a: UnidadCartera, b: UnidadCartera): number {
-  const texto = (x: string, y: string) => x.localeCompare(y, "es", { numeric: true });
+function compararPor(
+  columna: ColumnaOrden,
+  a: UnidadCartera,
+  b: UnidadCartera,
+): number {
+  const texto = (x: string, y: string) =>
+    x.localeCompare(y, "es", { numeric: true });
   switch (columna) {
     case "unidad":
       return texto(a.identificador, b.identificador);
@@ -365,13 +464,52 @@ function compararPor(columna: ColumnaOrden, a: UnidadCartera, b: UnidadCartera):
     case "etapa":
       return texto(a.etapaCobro, b.etapaCobro);
     case "pago":
-      return (a.ultimoPago?.fechaPago.getTime() ?? 0) - (b.ultimoPago?.fechaPago.getTime() ?? 0);
+      return (
+        (a.ultimoPago?.fechaPago.getTime() ?? 0) -
+        (b.ultimoPago?.fechaPago.getTime() ?? 0)
+      );
   }
 }
 
 async function KpisDeCartera({ copropiedadId }: { copropiedadId: string }) {
   const resumen = await getResumenCartera(copropiedadId);
   return <KpisCartera resumen={resumen} />;
+}
+
+async function MatrizUnidades({
+  copropiedadId,
+  torre,
+  situacion,
+  sufijoLista,
+  anio,
+  hrefAnio,
+}: {
+  copropiedadId: string;
+  torre?: string;
+  situacion?: string;
+  sufijoLista: string;
+  anio: number;
+  hrefAnio: (anio: number) => string;
+}) {
+  const unidades = await getUnidadesFiltradas(copropiedadId, {
+    torre,
+    situacion,
+  });
+  return (
+    <Seccion
+      titulo={`${unidades.length} unidad(es) · ${anio}`}
+      descripcion="Cada apartamento con lo que le corresponde pagar mes a mes, lo pagado y lo que debe."
+    >
+      <MatrizCartera
+        unidades={unidades}
+        anio={anio}
+        hrefAnio={hrefAnio}
+        hrefDe={(id) =>
+          `/dashboard/cartera?unidad=${id}${sufijoLista ? `&${sufijoLista}` : ""}`
+        }
+      />
+    </Seccion>
+  );
 }
 
 async function ListaUnidades({
@@ -389,7 +527,10 @@ async function ListaUnidades({
   orden?: { columna: ColumnaOrden; dir: "asc" | "desc" };
   hrefOrden: (columna: string) => string;
 }) {
-  const unidades = await getUnidadesFiltradas(copropiedadId, { torre, situacion });
+  const unidades = await getUnidadesFiltradas(copropiedadId, {
+    torre,
+    situacion,
+  });
   if (orden) {
     const signo = orden.dir === "asc" ? 1 : -1;
     unidades.sort((a, b) => signo * compararPor(orden.columna, a, b));
@@ -399,7 +540,9 @@ async function ListaUnidades({
     <Seccion
       titulo={`${unidades.length} unidad(es)`}
       descripcion={
-        orden ? "Haz clic en un encabezado para cambiar el orden." : "Ordenadas por saldo pendiente."
+        orden
+          ? "Haz clic en un encabezado para cambiar el orden."
+          : "Ordenadas por saldo pendiente."
       }
     >
       <UnidadesTabla
@@ -423,8 +566,14 @@ const HREF_PLANTILLA = `data:text/csv;charset=utf-8,${encodeURIComponent(PLANTIL
  * Alta de unidades por dos caminos que escriben lo mismo: CSV (con plantilla
  * descargable) o una por una. Debajo, el padrón con la suma de coeficientes.
  */
-async function SeccionUnidades({ copropiedad }: { copropiedad: CopropiedadActiva }) {
-  const { unidades, sumaCoeficientes } = await getUnidadesDeCopropiedad(copropiedad.id);
+async function SeccionUnidades({
+  copropiedad,
+}: {
+  copropiedad: CopropiedadActiva;
+}) {
+  const { unidades, sumaCoeficientes } = await getUnidadesDeCopropiedad(
+    copropiedad.id,
+  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -433,16 +582,20 @@ async function SeccionUnidades({ copropiedad }: { copropiedad: CopropiedadActiva
         descripcion={`Padrón de apartamentos y casas de ${copropiedad.nombre}.`}
       />
 
-      <SumaCoeficientes suma={sumaCoeficientes} totalUnidades={unidades.length} />
+      <SumaCoeficientes
+        suma={sumaCoeficientes}
+        totalUnidades={unidades.length}
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Tarjeta className="flex flex-col gap-4 p-5">
           <div>
             <h2 className="text-base font-semibold text-zinc-900">Subir CSV</h2>
             <p className="mt-0.5 text-sm text-zinc-500">
-              Ideal si ya tienes el padrón en Excel. El coeficiente puede ir en porcentaje o en
-              fracción (se detecta por la suma del archivo). Primero se muestra una vista previa;
-              nada se guarda hasta que confirmes.
+              Ideal si ya tienes el padrón en Excel. El coeficiente puede ir en
+              porcentaje o en fracción (se detecta por la suma del archivo).
+              Primero se muestra una vista previa; nada se guarda hasta que
+              confirmes.
             </p>
             <a
               href={HREF_PLANTILLA}
@@ -458,9 +611,12 @@ async function SeccionUnidades({ copropiedad }: { copropiedad: CopropiedadActiva
 
         <Tarjeta className="flex flex-col gap-4 p-5">
           <div>
-            <h2 className="text-base font-semibold text-zinc-900">Agregar manualmente</h2>
+            <h2 className="text-base font-semibold text-zinc-900">
+              Agregar manualmente
+            </h2>
             <p className="mt-0.5 text-sm text-zinc-500">
-              Una por una. Al guardar, el formulario queda listo para la siguiente.
+              Una por una. Al guardar, el formulario queda listo para la
+              siguiente.
             </p>
           </div>
           <UnidadForm modo="crear" />
@@ -490,17 +646,25 @@ async function SeccionUnidades({ copropiedad }: { copropiedad: CopropiedadActiva
               <tbody className="divide-y divide-zinc-100 bg-white">
                 {unidades.map((unidad) => (
                   <tr key={unidad.id}>
-                    <Td className="font-medium text-zinc-900">{unidad.identificador}</Td>
+                    <Td className="font-medium text-zinc-900">
+                      {unidad.identificador}
+                    </Td>
                     <Td>{etiquetaTorre(unidad.torre)}</Td>
-                    <Td className="text-right tabular-nums">{decimalComa(unidad.coeficiente)} %</Td>
-                    <Td className="text-right tabular-nums">{unidad.areaM2 ? decimalComa(unidad.areaM2) : "—"}</Td>
+                    <Td className="text-right tabular-nums">
+                      {decimalComa(unidad.coeficiente)} %
+                    </Td>
+                    <Td className="text-right tabular-nums">
+                      {unidad.areaM2 ? decimalComa(unidad.areaM2) : "—"}
+                    </Td>
                     <Td className="text-right tabular-nums">
                       {unidad.cuotaAdministracion !== "0"
                         ? formatearMoneda(unidad.cuotaAdministracion)
                         : "—"}
                     </Td>
                     <Td>
-                      <Etiqueta tono={unidad.estado === "OCUPADO" ? "exito" : "neutro"}>
+                      <Etiqueta
+                        tono={unidad.estado === "OCUPADO" ? "exito" : "neutro"}
+                      >
                         {ETIQUETAS_ESTADO_INMUEBLE[unidad.estado]}
                       </Etiqueta>
                     </Td>
@@ -522,9 +686,18 @@ async function SeccionUnidades({ copropiedad }: { copropiedad: CopropiedadActiva
 
 const FILTROS_RESERVA = [
   { valor: undefined, etiqueta: "Todas" },
-  { valor: EstadoReserva.PENDIENTE, etiqueta: ETIQUETAS_ESTADO_RESERVA.PENDIENTE },
-  { valor: EstadoReserva.CONFIRMADA, etiqueta: ETIQUETAS_ESTADO_RESERVA.CONFIRMADA },
-  { valor: EstadoReserva.CANCELADA, etiqueta: ETIQUETAS_ESTADO_RESERVA.CANCELADA },
+  {
+    valor: EstadoReserva.PENDIENTE,
+    etiqueta: ETIQUETAS_ESTADO_RESERVA.PENDIENTE,
+  },
+  {
+    valor: EstadoReserva.CONFIRMADA,
+    etiqueta: ETIQUETAS_ESTADO_RESERVA.CONFIRMADA,
+  },
+  {
+    valor: EstadoReserva.CANCELADA,
+    etiqueta: ETIQUETAS_ESTADO_RESERVA.CANCELADA,
+  },
 ] as const;
 
 async function SeccionReservas({
@@ -536,7 +709,7 @@ async function SeccionReservas({
 }) {
   const estadoParam = leerParam(searchParams, "estado");
   const estadoFiltro = (Object.values(EstadoReserva) as string[]).includes(
-    estadoParam ?? ""
+    estadoParam ?? "",
   )
     ? (estadoParam as EstadoReserva)
     : undefined;
@@ -611,7 +784,7 @@ async function SeccionPqrs({
 }) {
   const estadoParam = leerParam(searchParams, "estado");
   const estadoFiltro = (Object.values(EstadoPQRS) as string[]).includes(
-    estadoParam ?? ""
+    estadoParam ?? "",
   )
     ? (estadoParam as EstadoPQRS)
     : undefined;
@@ -645,7 +818,9 @@ async function SeccionPqrs({
           <FiltroPill
             key={filtro.etiqueta}
             href={
-              filtro.valor ? `/dashboard/pqrs?estado=${filtro.valor}` : "/dashboard/pqrs"
+              filtro.valor
+                ? `/dashboard/pqrs?estado=${filtro.valor}`
+                : "/dashboard/pqrs"
             }
             activo={filtro.valor === estadoFiltro}
           >
@@ -719,7 +894,7 @@ async function SeccionPrestadores({
   const abiertas = ordenes.filter(
     (orden) =>
       orden.estado === EstadoOrdenServicio.ABIERTA ||
-      orden.estado === EstadoOrdenServicio.EN_PROCESO
+      orden.estado === EstadoOrdenServicio.EN_PROCESO,
   ).length;
 
   return (
